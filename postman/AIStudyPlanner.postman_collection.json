@@ -1,0 +1,118 @@
+{
+  "info": {
+    "name": "AI Study Planner API",
+    "_postman_id": "a06f4e7f-ecfe-4c8e-861d-f11e78f6d001",
+    "description": "Postman collection for AI Study Planner for Students.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "goalId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Register",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fullName\": \"Asha Student\",\n  \"email\": \"asha@example.com\",\n  \"password\": \"StrongPass123!\"\n}"
+        },
+        "url": "{{baseUrl}}/api/auth/register"
+      }
+    },
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"demo@student.com\",\n  \"password\": \"Demo@12345\"\n}"
+        },
+        "url": "{{baseUrl}}/api/auth/login"
+      }
+    },
+    {
+      "name": "Get Goals",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/goals"
+      }
+    },
+    {
+      "name": "Create Goal",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Prepare for semester exams in 30 days\",\n  \"description\": \"Focus on DBMS, CN, OS, and revision practice tests.\",\n  \"targetDate\": \"2026-05-02\",\n  \"dailyAvailableHours\": 3,\n  \"difficultyLevel\": \"Intermediate\",\n  \"priority\": \"High\",\n  \"preferredStudyTime\": \"Evening\",\n  \"breakPreference\": \"Pomodoro\",\n  \"subjects\": [\"DBMS\", \"CN\", \"OS\", \"Revision\"],\n  \"status\": \"Active\",\n  \"autoGeneratePlan\": true\n}"
+        },
+        "url": "{{baseUrl}}/api/goals"
+      }
+    },
+    {
+      "name": "Generate Plan",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/ai/generate-plan/{{goalId}}"
+      }
+    },
+    {
+      "name": "Dashboard Summary",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/dashboard/summary"
+      }
+    }
+  ]
+}
