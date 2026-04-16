@@ -60,7 +60,9 @@ public class GeminiService(
             if (!response.IsSuccessStatusCode)
             {
                 logger.LogError("Gemini call failed with status {StatusCode}: {Body}", response.StatusCode, rawResponse);
-                throw new InvalidOperationException("AI schedule generation failed. Please verify Gemini settings and try again.");
+                var fallback = BuildFallback(prompt, goal);
+                fallback.RawResponse = rawResponse;
+                return fallback;
             }
 
             var jsonPayload = ExtractJson(rawResponse);
@@ -69,14 +71,15 @@ public class GeminiService(
             result.RawResponse = rawResponse;
             return result;
         }
-        catch (InvalidOperationException)
+        catch (InvalidOperationException ex)
         {
-            throw;
+            logger.LogError(ex, "Gemini returned an invalid response shape.");
+            return BuildFallback(prompt, goal);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Unexpected Gemini integration failure.");
-            throw new InvalidOperationException("AI schedule generation failed. Please try again shortly.");
+            return BuildFallback(prompt, goal);
         }
     }
 
