@@ -1,0 +1,105 @@
+@model DashboardPageViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    ViewData["Subtitle"] = "A quick read on goals, progress, and what needs attention next.";
+    var dashboard = Model.Dashboard;
+    var progress = Model.Progress;
+}
+
+<section class="stats-grid">
+    <article class="stat-card glass-panel">
+        <p class="stat-label">Total goals</p>
+        <p class="stat-value">@dashboard.TotalGoals</p>
+    </article>
+    <article class="stat-card glass-panel">
+        <p class="stat-label">Active goals</p>
+        <p class="stat-value brand">@dashboard.ActiveGoals</p>
+    </article>
+    <article class="stat-card glass-panel">
+        <p class="stat-label">Weekly study hours</p>
+        <p class="stat-value accent">@dashboard.HoursStudiedThisWeek h</p>
+    </article>
+    <article class="stat-card glass-panel">
+        <p class="stat-label">Current streak</p>
+        <p class="stat-value">@dashboard.StreakCount days</p>
+    </article>
+</section>
+
+<section class="two-column-grid">
+    <article class="glass-panel panel-card">
+        <div class="panel-heading">
+            <div>
+                <p class="eyebrow">Overview</p>
+                <h2>Goal completion overview</h2>
+            </div>
+        </div>
+
+        @if (dashboard.ProgressByGoal.Count == 0)
+        {
+            <div class="empty-state">
+                <h3>No goals yet</h3>
+                <p>Create your first goal to unlock the dashboard charts.</p>
+            </div>
+        }
+        else
+        {
+            <div class="bar-chart">
+                @foreach (var item in dashboard.ProgressByGoal)
+                {
+                    <div class="bar-row">
+                        <span class="bar-label">@item.GoalTitle</span>
+                        <div class="bar-track">
+                            <div class="bar-fill" style="width:@item.CompletionPercentage%"></div>
+                        </div>
+                        <span class="bar-value">@item.CompletionPercentage%</span>
+                    </div>
+                }
+            </div>
+        }
+    </article>
+
+    <div class="stack-panel">
+        <article class="glass-panel radial-card">
+            <div class="radial-copy">
+                <p class="stat-label">Weekly progress</p>
+                <h3>@progress.WeeklyProgressPercentage%</h3>
+                <p class="helper-copy">Based on completed tasks.</p>
+            </div>
+            <div class="donut" style="background: conic-gradient(var(--brand) 0 @progress.WeeklyProgressPercentage%, #d7e0eb @progress.WeeklyProgressPercentage% 100%);">
+                <div class="donut-center">@progress.WeeklyProgressPercentage%</div>
+            </div>
+        </article>
+
+        <article class="glass-panel panel-card">
+            <div class="panel-heading">
+                <div>
+                    <p class="eyebrow">Reminders</p>
+                    <h2>Upcoming reminders</h2>
+                </div>
+            </div>
+
+            @if (dashboard.UpcomingReminders.Count == 0)
+            {
+                <div class="empty-state compact">
+                    <h3>No reminders yet</h3>
+                    <p>Create a reminder to keep your next session on track.</p>
+                </div>
+            }
+            else
+            {
+                <div class="reminder-list">
+                    @foreach (var reminder in dashboard.UpcomingReminders)
+                    {
+                        <div class="reminder-card">
+                            <div>
+                                <p class="reminder-title">@reminder.Title</p>
+                                <p class="reminder-meta">@reminder.ReminderDateTime.ToString("dd MMM yyyy, hh:mm tt")</p>
+                            </div>
+                            <span class="pill @(reminder.IsRead ? "muted" : "brand")">@(reminder.IsRead ? "Read" : "Unread")</span>
+                        </div>
+                    }
+                </div>
+            }
+        </article>
+    </div>
+</section>

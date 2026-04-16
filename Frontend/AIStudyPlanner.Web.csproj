@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Remove="src\**" />
+    <None Remove="src\**" />
+    <Compile Remove="src\**" />
+
+    <Content Remove="public\**" />
+    <None Remove="public\**" />
+    <Compile Remove="public\**" />
+
+    <Content Remove="package.json" />
+    <None Remove="package.json" />
+    <Content Remove="package-lock.json" />
+    <None Remove="package-lock.json" />
+    <Content Remove="pnpm-lock.yaml" />
+    <None Remove="pnpm-lock.yaml" />
+    <Content Remove="yarn.lock" />
+    <None Remove="yarn.lock" />
+
+    <Content Remove="eslint.config.js" />
+    <Content Remove="index.html" />
+    <Content Remove="postcss.config.js" />
+    <Content Remove="tailwind.config.js" />
+    <Content Remove="tsconfig.app.json" />
+    <Content Remove="tsconfig.json" />
+    <Content Remove="tsconfig.node.json" />
+    <Content Remove="vite.config.ts" />
+    <Content Remove="README.md" />
+  </ItemGroup>
+
+</Project>

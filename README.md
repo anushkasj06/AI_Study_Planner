@@ -2,13 +2,13 @@
 
 Full-stack portfolio project with:
 
-- Backend: ASP.NET Core Web API (.NET 9, C#)
+- Backend: ASP.NET Core Web API (.NET 10, C#)
+- Frontend: ASP.NET Core MVC (.NET 10, Razor)
 - ORM: Entity Framework Core
 - Database: MySQL
 - MySQL provider: Pomelo.EntityFrameworkCore.MySql
-- Frontend: React + Vite + TypeScript
-- Styling: Tailwind CSS
-- Auth: JWT
+- Styling: custom glassmorphism CSS based on the original Tailwind design
+- Auth: JWT on the API, cookie session in the ASP.NET frontend
 - AI: Google Gemini API via `GEMINI_API_KEY` / `Gemini__ApiKey`
 
 ## Folder Structure
@@ -35,24 +35,16 @@ study_planner/
 │   ├── appsettings.json
 │   ├── appsettings.Development.json
 │   └── README.md
-├── ai-study-planner-client/
-│   ├── public/
-│   ├── src/
-│   │   ├── api/
-│   │   ├── components/
-│   │   ├── context/
-│   │   ├── lib/
-│   │   ├── pages/
-│   │   ├── types/
-│   │   ├── App.tsx
-│   │   ├── index.css
-│   │   └── main.tsx
-│   ├── .env.example
-│   ├── package.json
-│   ├── postcss.config.js
-│   ├── tailwind.config.js
-│   ├── vite.config.ts
-│   └── README.md
+├── Frontend/
+│   ├── Controllers/
+│   ├── Models/
+│   ├── Services/
+│   ├── Views/
+│   ├── wwwroot/
+│   ├── AIStudyPlanner.Web.csproj
+│   ├── Program.cs
+│   ├── appsettings.json
+│   └── appsettings.Development.json
 ├── postman/
 │   └── AIStudyPlanner.postman_collection.json
 ├── .gitignore
@@ -73,8 +65,7 @@ study_planner/
 
 ## Prerequisites
 
-- .NET SDK 9.0+
-- Node.js 20+ and npm
+- .NET SDK 10.0+
 - MySQL 8+
 - A Gemini API key if you want live AI generation
 
@@ -98,8 +89,8 @@ study_planner/
 ### Frontend config location
 
 - API base URL:
-  - `ai-study-planner-client/.env`
-  - variable: `VITE_API_BASE_URL=http://localhost:5000`
+  - `Frontend/appsettings.json`
+  - variable: `Api:BaseUrl=https://localhost:7001/`
 
 ## MySQL Setup
 
@@ -149,14 +140,14 @@ dotnet dotnet-ef database update
 ## Frontend Run Steps
 
 ```powershell
-cd ai-study-planner-client
-npm install
-npm run dev
+cd Frontend
+dotnet restore
+dotnet run
 ```
 
 Frontend URL:
 
-- `http://localhost:5173`
+- `https://localhost:7102` or `http://localhost:5102`
 
 ## Demo Account
 
@@ -185,7 +176,7 @@ Backend supports:
 
 Frontend supports:
 
-- `VITE_API_BASE_URL`
+- `Api__BaseUrl`
 
 ## Backend Packages Used
 
@@ -196,21 +187,10 @@ Frontend supports:
 - `Pomelo.EntityFrameworkCore.MySql`
 - `Swashbuckle.AspNetCore`
 
-## Frontend Packages Used
+## Frontend Notes
 
-- `react-router-dom`
-- `axios`
-- `react-hook-form`
-- `@hookform/resolvers`
-- `zod`
-- `tailwindcss`
-- `postcss`
-- `autoprefixer`
-- `recharts`
-- `dayjs`
-- `lucide-react`
-- `react-hot-toast`
-- `clsx`
+- The old React source remains in `Frontend/src` but is no longer the active UI.
+- The active frontend is the ASP.NET MVC project in `Frontend/AIStudyPlanner.Web.csproj`.
 
 ## Key API Endpoints
 

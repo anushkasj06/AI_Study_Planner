@@ -1,0 +1,104 @@
+@model GoalFormViewModel
+@{
+    ViewData["Title"] = "Create goal";
+}
+
+<section class="page-heading-row narrow">
+    <div>
+        <p class="eyebrow">New goal</p>
+        <h2>Create a new study goal</h2>
+        <p class="helper-copy">Add the goal details that Gemini will use to produce a structured schedule.</p>
+    </div>
+</section>
+
+<form method="post" class="glass-panel form-card">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="field-error summary-error"></div>
+
+    <div class="form-grid">
+        <label class="field span-2">
+            <span class="field-label">Goal title</span>
+            <input asp-for="Title" class="field-control" placeholder="Complete DSA in 45 days" />
+            <span asp-validation-for="Title" class="field-error"></span>
+        </label>
+
+        <label class="field span-2">
+            <span class="field-label">Description</span>
+            <textarea asp-for="Description" rows="4" class="field-control"></textarea>
+            <span asp-validation-for="Description" class="field-error"></span>
+        </label>
+
+        <label class="field">
+            <span class="field-label">Target date</span>
+            <input asp-for="TargetDate" type="date" class="field-control" />
+            <span asp-validation-for="TargetDate" class="field-error"></span>
+        </label>
+
+        <label class="field">
+            <span class="field-label">Daily hours</span>
+            <input asp-for="DailyAvailableHours" type="number" step="0.5" class="field-control" />
+            <span asp-validation-for="DailyAvailableHours" class="field-error"></span>
+        </label>
+
+        <label class="field">
+            <span class="field-label">Difficulty</span>
+            <select asp-for="DifficultyLevel" class="field-control">
+                <option>Beginner</option>
+                <option>Intermediate</option>
+                <option>Advanced</option>
+            </select>
+        </label>
+
+        <label class="field">
+            <span class="field-label">Priority</span>
+            <select asp-for="Priority" class="field-control">
+                <option>Low</option>
+                <option>Medium</option>
+                <option>High</option>
+            </select>
+        </label>
+
+        <label class="field">
+            <span class="field-label">Preferred study time</span>
+            <select asp-for="PreferredStudyTime" class="field-control">
+                <option>Morning</option>
+                <option>Afternoon</option>
+                <option>Evening</option>
+                <option>Flexible</option>
+            </select>
+        </label>
+
+        <label class="field">
+            <span class="field-label">Break preference</span>
+            <select asp-for="BreakPreference" class="field-control">
+                <option>Pomodoro</option>
+                <option>ShortBreaks</option>
+                <option>LongBreaks</option>
+                <option>Minimal</option>
+            </select>
+        </label>
+
+        <label class="field">
+            <span class="field-label">Status</span>
+            <select asp-for="Status" class="field-control">
+                <option>Draft</option>
+                <option>Active</option>
+                <option>Completed</option>
+                <option>Archived</option>
+            </select>
+        </label>
+
+        <label class="field span-2">
+            <span class="field-label">Subjects / topics</span>
+            <input asp-for="Subjects" class="field-control" placeholder="Arrays, DBMS, Java" />
+            <span asp-validation-for="Subjects" class="field-error"></span>
+        </label>
+    </div>
+
+    <label class="toggle-row">
+        <input asp-for="AutoGeneratePlan" type="checkbox" />
+        <span>Generate an AI study schedule right after saving this goal</span>
+    </label>
+
+    <button type="submit" class="btn btn-primary">Save goal</button>
+</form>

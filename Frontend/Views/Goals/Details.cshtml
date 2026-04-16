@@ -1,0 +1,128 @@
+@model GoalDetailsPageViewModel
+@{
+    ViewData["Title"] = "Goal details";
+    var plan = Model.Plans.FirstOrDefault();
+    var returnUrl = $"/app/goals/{Model.Goal.Id}";
+}
+
+<section class="glass-panel detail-card">
+    <div class="detail-header">
+        <div>
+            <p class="eyebrow">Goal details</p>
+            <h2>@Model.Goal.Title</h2>
+            <p class="helper-copy">@Model.Goal.Description</p>
+        </div>
+
+        <form method="post" asp-action="Regenerate" asp-route-goalId="@Model.Goal.Id">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-primary">Regenerate plan</button>
+        </form>
+    </div>
+
+    <div class="goal-meta-grid detail-meta-grid">
+        <div>
+            <span class="meta-label">Target date</span>
+            <strong>@Model.Goal.TargetDate.ToString("dd MMM yyyy")</strong>
+        </div>
+        <div>
+            <span class="meta-label">Daily hours</span>
+            <strong>@Model.Goal.DailyAvailableHours hrs</strong>
+        </div>
+        <div>
+            <span class="meta-label">Status</span>
+            <strong>@Model.Goal.Status</strong>
+        </div>
+        <div>
+            <span class="meta-label">Subjects</span>
+            <strong>@string.Join(", ", Model.Goal.Subjects)</strong>
+        </div>
+    </div>
+</section>
+
+@if (plan is null)
+{
+    <div class="empty-state">
+        <h3>No plan yet</h3>
+        <p>Generate a plan for this goal to start seeing structured study tasks.</p>
+    </div>
+}
+else
+{
+    <section class="glass-panel panel-card">
+        <div class="panel-heading">
+            <div>
+                <p class="eyebrow">AI plan preview</p>
+                <h2>@plan.Title</h2>
+                <p class="helper-copy">
+                    @plan.StartDate.ToString("dd MMM yyyy") to @plan.EndDate.ToString("dd MMM yyyy") • @plan.TotalEstimatedHours estimated hours
+                </p>
+            </div>
+            <span class="pill success">@(plan.GeneratedByAI ? "Gemini generated" : "Fallback generated")</span>
+        </div>
+
+        <div class="plan-task-list">
+            @foreach (var task in plan.Tasks.Take(5))
+            {
+                <article class="task-item">
+                    <div class="task-item-main">
+                        <div>
+                            <h3>@task.Topic</h3>
+                            <p>@task.Subtopic</p>
+                        </div>
+                        <div class="task-item-meta-right">
+                            <p>@task.TaskDate.ToString("dd MMM yyyy")</p>
+                            <p>@task.EstimatedHours hrs</p>
+                        </div>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+
+    <section class="glass-panel panel-card">
+        <div class="panel-heading">
+            <div>
+                <p class="eyebrow">Plan tasks</p>
+                <h2>Study task list</h2>
+            </div>
+        </div>
+
+        <div class="task-list">
+            @foreach (var task in plan.Tasks)
+            {
+                <article class="task-row">
+                    <form method="post" asp-controller="Tasks" asp-action="Toggle" asp-route-taskId="@task.Id" asp-route-returnUrl="@returnUrl">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="checkbox-button" aria-label="Toggle task completion">
+                            <span class="checkbox @(task.IsCompleted ? "checked" : string.Empty)"></span>
+                        </button>
+                    </form>
+
+                    <div class="task-row-body">
+                        <div class="task-row-top">
+                            <div>
+                                <h3>@task.Topic</h3>
+                                <p>@task.Subtopic</p>
+                            </div>
+                            <div class="task-actions-inline">
+                                <span class="pill brand">@task.TaskType</span>
+                                <form method="post" asp-controller="Tasks" asp-action="Delete" asp-route-taskId="@task.Id" asp-route-returnUrl="@returnUrl">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="icon-button danger">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <p class="task-notes">@task.Notes</p>
+
+                        <div class="task-meta-row">
+                            <span>@task.EstimatedHours h planned</span>
+                            <span>@task.GoalTitle</span>
+                            <span>@task.Priority priority</span>
+                        </div>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+}

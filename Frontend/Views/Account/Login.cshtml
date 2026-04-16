@@ -1,0 +1,36 @@
+@model LoginViewModel
+@{
+    ViewData["HideShell"] = true;
+    ViewData["Title"] = "Login";
+}
+
+<section class="auth-card glass-panel">
+    <div>
+        <p class="eyebrow">Welcome back</p>
+        <h1>Log into your study workspace</h1>
+    </div>
+
+    <form method="post" class="stack-form">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="field-error summary-error"></div>
+
+        <label class="field">
+            <span class="field-label">Email</span>
+            <input asp-for="Email" type="email" class="field-control" placeholder="Email" />
+            <span asp-validation-for="Email" class="field-error"></span>
+        </label>
+
+        <label class="field">
+            <span class="field-label">Password</span>
+            <input asp-for="Password" type="password" class="field-control" placeholder="Password" />
+            <span asp-validation-for="Password" class="field-error"></span>
+        </label>
+
+        <button type="submit" class="btn btn-primary full-width">Login</button>
+
+        <p class="auth-link">
+            Need an account?
+            <a href="/register">Create one</a>
+        </p>
+    </form>
+</section>

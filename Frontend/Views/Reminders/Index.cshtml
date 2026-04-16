@@ -1,0 +1,99 @@
+@model RemindersPageViewModel
+@{
+    ViewData["Title"] = "Reminders";
+    ViewData["Subtitle"] = "Time your next study block before the day gets away.";
+    var form = Model.Form;
+}
+
+<section class="reminders-layout">
+    <form method="post" asp-action="Create" class="glass-panel form-card reminder-form">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="field-error summary-error"></div>
+
+        <div class="panel-heading">
+            <div>
+                <p class="eyebrow">Reminder</p>
+                <h2>@(string.IsNullOrWhiteSpace(form.Title) ? "Create reminder" : "Edit reminder")</h2>
+            </div>
+        </div>
+
+        <label class="field">
+            <span class="field-label">Title</span>
+            <input asp-for="Form.Title" class="field-control" placeholder="Study DBMS at 7 PM" />
+            <span asp-validation-for="Form.Title" class="field-error"></span>
+        </label>
+
+        <label class="field">
+            <span class="field-label">Message</span>
+            <textarea asp-for="Form.Message" rows="3" class="field-control" placeholder="Short reminder note"></textarea>
+            <span asp-validation-for="Form.Message" class="field-error"></span>
+        </label>
+
+        <label class="field">
+            <span class="field-label">Reminder time</span>
+            <input asp-for="Form.ReminderDateTime" type="datetime-local" class="field-control" />
+            <span asp-validation-for="Form.ReminderDateTime" class="field-error"></span>
+        </label>
+
+        <label class="field">
+            <span class="field-label">Channel</span>
+            <select asp-for="Form.Channel" class="field-control">
+                <option>InApp</option>
+                <option>Email</option>
+            </select>
+        </label>
+
+        <button type="submit" class="btn btn-primary">Add reminder</button>
+    </form>
+
+    <article class="glass-panel panel-card">
+        <div class="panel-heading">
+            <div>
+                <p class="eyebrow">Reminders</p>
+                <h2>Your reminders</h2>
+            </div>
+        </div>
+
+        @if (Model.Reminders.Count == 0)
+        {
+            <div class="empty-state compact">
+                <h3>No reminders scheduled</h3>
+                <p>Create an in-app or email reminder for your next focused session.</p>
+            </div>
+        }
+        else
+        {
+            <div class="reminder-list">
+                @foreach (var reminder in Model.Reminders)
+                {
+                    <article class="reminder-card stacked">
+                        <div>
+                            <p class="reminder-title">@reminder.Title</p>
+                            <p class="reminder-message">@reminder.Message</p>
+                            <p class="reminder-meta">@reminder.ReminderDateTime.ToString("dd MMM yyyy, hh:mm tt")</p>
+                        </div>
+
+                        <div class="reminder-actions">
+                            <span class="pill @(reminder.IsRead ? "muted" : "brand")">@(reminder.IsRead ? "Read" : "Unread")</span>
+
+                            <div class="reminder-button-row">
+                                @if (!reminder.IsRead)
+                                {
+                                    <form method="post" asp-action="MarkRead" asp-route-reminderId="@reminder.Id">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-secondary small">Mark read</button>
+                                    </form>
+                                }
+
+                                <form method="post" asp-action="Delete" asp-route-reminderId="@reminder.Id">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-danger small">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </article>
+</section>

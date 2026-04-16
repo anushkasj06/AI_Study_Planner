@@ -1,0 +1,83 @@
+@model ProgressPageViewModel
+@{
+    ViewData["Title"] = "Progress";
+    var completed = Model.Summary.CompletedTasks;
+    var total = Model.Summary.TotalTasks;
+    var pending = Math.Max(total - completed, 0);
+    var completedShare = total == 0 ? 0 : Math.Round((double)completed / total * 100, 2);
+    var pendingShare = 100 - completedShare;
+}
+
+<section class="progress-layout">
+    <article class="glass-panel panel-card">
+        <div class="panel-heading">
+            <div>
+                <p class="eyebrow">Summary</p>
+                <h2>Progress summary</h2>
+            </div>
+        </div>
+
+        <div class="donut large" style="background: conic-gradient(var(--brand) 0 @completedShare%, #d7e0eb @completedShare% 100%);">
+            <div class="donut-center">
+                <span>@completedShare%</span>
+            </div>
+        </div>
+
+        <div class="metric-grid">
+            <article class="metric-card">
+                <span>Hours this week</span>
+                <strong>@Model.Summary.CompletedHoursThisWeek h</strong>
+            </article>
+            <article class="metric-card">
+                <span>Daily streak</span>
+                <strong>@Model.Summary.DailyStreak days</strong>
+            </article>
+            <article class="metric-card">
+                <span>Completed tasks</span>
+                <strong>@completed/@total</strong>
+            </article>
+            <article class="metric-card">
+                <span>Weekly completion</span>
+                <strong>@Model.Summary.WeeklyProgressPercentage%</strong>
+            </article>
+        </div>
+    </article>
+
+    <article class="glass-panel panel-card">
+        <div class="panel-heading">
+            <div>
+                <p class="eyebrow">By goal</p>
+                <h2>Progress by goal</h2>
+            </div>
+        </div>
+
+        @if (Model.Goals.Count == 0)
+        {
+            <div class="empty-state compact">
+                <h3>No goals yet</h3>
+                <p>Create a goal to start tracking meaningful progress here.</p>
+            </div>
+        }
+        else
+        {
+            <div class="goal-progress-list">
+                @foreach (var goal in Model.Goals)
+                {
+                    <article class="goal-progress-card">
+                        <div class="goal-progress-head">
+                            <div>
+                                <h3>@goal.Title</h3>
+                                <p>@goal.CompletedTasks of @goal.TotalTasks tasks done</p>
+                            </div>
+                            <strong>@goal.CompletionPercentage%</strong>
+                        </div>
+
+                        <div class="progress-track">
+                            <div class="progress-fill" style="width:@goal.CompletionPercentage%"></div>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </article>
+</section>

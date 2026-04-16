@@ -1,0 +1,105 @@
+@model PlannerPageViewModel
+@{
+    ViewData["Title"] = "Planner";
+    ViewData["Subtitle"] = "Keep today focused and the week balanced.";
+    var today = DateTime.Today;
+    var startOfWeek = today.AddDays(-(int)today.DayOfWeek);
+    var groupedWeekTasks = Model.WeekTasks.GroupBy(task => task.TaskDate.Date).ToDictionary(group => group.Key, group => group.ToList());
+}
+
+<section class="glass-panel panel-card">
+    <div class="panel-heading">
+        <div>
+            <p class="eyebrow">Weekly planner</p>
+            <h2>Weekly planner</h2>
+        </div>
+    </div>
+
+    <div class="week-grid">
+        @for (var index = 0; index < 7; index++)
+        {
+            var day = startOfWeek.AddDays(index);
+            groupedWeekTasks.TryGetValue(day.Date, out var dayTasks);
+            dayTasks ??= [];
+
+            <article class="week-day-card">
+                <p class="weekday">@day.ToString("ddd")</p>
+                <h3>@day.ToString("dd MMM")</h3>
+
+                <div class="week-task-stack">
+                    @if (dayTasks.Count == 0)
+                    {
+                        <p class="week-empty">Rest / buffer</p>
+                    }
+                    else
+                    {
+                        foreach (var task in dayTasks)
+                        {
+                            <div class="week-task">
+                                <strong>@task.Topic</strong>
+                                <span>@task.EstimatedHours hrs</span>
+                            </div>
+                        }
+                    }
+                </div>
+            </article>
+        }
+    </div>
+</section>
+
+<section class="glass-panel panel-card">
+    <div class="panel-heading">
+        <div>
+            <p class="eyebrow">Today</p>
+            <h2>Today's focus tasks</h2>
+        </div>
+    </div>
+
+    @if (Model.TodayTasks.Count == 0)
+    {
+        <div class="empty-state compact">
+            <h3>No tasks yet</h3>
+            <p>Generate a plan or create a goal to start seeing study sessions here.</p>
+        </div>
+    }
+    else
+    {
+        <div class="task-list">
+            @foreach (var task in Model.TodayTasks)
+            {
+                <article class="task-row">
+                    <form method="post" asp-controller="Tasks" asp-action="Toggle" asp-route-taskId="@task.Id" asp-route-returnUrl="/app/planner">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="checkbox-button" aria-label="Toggle task completion">
+                            <span class="checkbox @(task.IsCompleted ? "checked" : string.Empty)"></span>
+                        </button>
+                    </form>
+
+                    <div class="task-row-body">
+                        <div class="task-row-top">
+                            <div>
+                                <h3>@task.Topic</h3>
+                                <p>@task.Subtopic</p>
+                            </div>
+                            <div class="task-actions-inline">
+                                <span class="pill brand">@task.TaskType</span>
+                                <form method="post" asp-controller="Tasks" asp-action="Delete" asp-route-taskId="@task.Id" asp-route-returnUrl="/app/planner">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="icon-button danger">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <p class="task-notes">@task.Notes</p>
+
+                        <div class="task-meta-row">
+                            <span>@task.EstimatedHours h planned</span>
+                            <span>@task.GoalTitle</span>
+                            <span>@task.Priority priority</span>
+                        </div>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</section>

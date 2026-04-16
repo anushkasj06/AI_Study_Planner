@@ -1,0 +1,26 @@
+@model ProfilePageViewModel
+@{
+    ViewData["Title"] = "Profile";
+}
+
+<section class="profile-card glass-panel">
+    <p class="eyebrow">Profile</p>
+    <h2>@Model.User.FullName</h2>
+    <p class="helper-copy">@Model.User.Email</p>
+
+    <div class="profile-grid">
+        <article class="metric-card">
+            <span>Member since</span>
+            <strong>@Model.User.CreatedAt.ToString("dd MMM yyyy")</strong>
+        </article>
+        <article class="metric-card">
+            <span>Auth mode</span>
+            <strong>JWT bearer token</strong>
+        </article>
+    </div>
+
+    <form method="post" asp-controller="Account" asp-action="Logout">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="btn btn-primary">Logout</button>
+    </form>
+</section>

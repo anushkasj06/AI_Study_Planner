@@ -1,0 +1,64 @@
+@model GoalsPageViewModel
+@{
+    ViewData["Title"] = "Goals";
+    ViewData["Subtitle"] = "Organize every target by priority, date, and subject.";
+}
+
+<section class="page-heading-row">
+    <div>
+        <p class="eyebrow">Goals</p>
+        <h2>Study goals</h2>
+        <p class="helper-copy">Manage your deadlines, priorities, and AI-generated plans.</p>
+    </div>
+    <a class="btn btn-primary" href="/app/goals/new">Create goal</a>
+</section>
+
+@if (Model.Goals.Count == 0)
+{
+    <div class="empty-state">
+        <h3>No goals yet</h3>
+        <p>Create your first goal and generate an AI study plan in one flow.</p>
+    </div>
+}
+else
+{
+    <section class="goal-grid">
+        @foreach (var goal in Model.Goals)
+        {
+            <article class="glass-panel goal-card">
+                <div class="goal-card-header">
+                    <div>
+                        <span class="pill brand">@goal.Priority</span>
+                        <h3>@goal.Title</h3>
+                        <p>@goal.Description</p>
+                    </div>
+                    <span class="pill muted">@goal.Status</span>
+                </div>
+
+                <div class="goal-meta-grid">
+                    <div>
+                        <span class="meta-label">Target date</span>
+                        <strong>@goal.TargetDate.ToString("dd MMM yyyy")</strong>
+                    </div>
+                    <div>
+                        <span class="meta-label">Daily time</span>
+                        <strong>@goal.DailyAvailableHours hrs</strong>
+                    </div>
+                    <div>
+                        <span class="meta-label">Completion</span>
+                        <strong>@goal.CompletionPercentage%</strong>
+                    </div>
+                </div>
+
+                <div class="progress-track">
+                    <div class="progress-fill" style="width:@goal.CompletionPercentage%"></div>
+                </div>
+
+                <div class="goal-card-footer">
+                    <span class="muted-copy">@string.Join(", ", goal.Subjects)</span>
+                    <a class="link-button" href="/app/goals/@goal.Id">View details</a>
+                </div>
+            </article>
+        }
+    </section>
+}
