@@ -15,7 +15,16 @@
 
         <form method="post" asp-action="Regenerate" asp-route-goalId="@Model.Goal.Id">
             @Html.AntiForgeryToken()
-            <button type="submit" class="btn btn-primary">Regenerate plan</button>
+            <div class="task-actions-inline">
+                <button type="submit" class="btn btn-primary">Regenerate plan</button>
+                <button type="submit"
+                        formaction="/app/goals/@Model.Goal.Id/delete"
+                        formmethod="post"
+                        class="btn btn-danger"
+                        onclick="return confirm('Delete this goal and all linked plans/tasks?');">
+                    Delete goal
+                </button>
+            </div>
         </form>
     </div>
 

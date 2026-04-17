@@ -1,6 +1,8 @@
+using AIStudyPlanner.Api.Helpers;
+
 namespace AIStudyPlanner.Api.Interfaces;
 
 public interface IEmailService
 {
-    Task SendReminderAsync(string toEmail, string subject, string body, CancellationToken cancellationToken = default);
+    Task<DeliveryResult> SendReminderAsync(string toEmail, string subject, string body, CancellationToken cancellationToken = default);
 }

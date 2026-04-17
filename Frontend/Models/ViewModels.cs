@@ -10,7 +10,7 @@ public sealed class LoginViewModel
 
     [Required]
     [DataType(DataType.Password)]
-    public string Password { get; set; } = "Demo@12345";
+    public string Password { get; set; } = string.Empty;
 }
 
 public sealed class RegisterViewModel
@@ -22,6 +22,10 @@ public sealed class RegisterViewModel
     [Required]
     [EmailAddress]
     public string Email { get; set; } = string.Empty;
+
+    [Required]
+    [RegularExpression("^\\+?[1-9]\\d{7,14}$", ErrorMessage = "Use international format, for example +919876543210")]
+    public string PhoneNumber { get; set; } = string.Empty;
 
     [Required]
     [DataType(DataType.Password)]
@@ -74,13 +78,20 @@ public sealed class ReminderFormViewModel
     [Required]
     public string ReminderDateTime { get; set; } = DateTime.Now.AddHours(1).ToString("yyyy-MM-ddTHH:mm");
 
-    public ReminderChannel Channel { get; set; } = ReminderChannel.InApp;
+    [StringLength(600)]
+    public string AiPrompt { get; set; } = string.Empty;
+
+    public bool ChannelInApp { get; set; } = true;
+    public bool ChannelEmail { get; set; }
+    public bool ChannelBrowserPush { get; set; }
 }
 
 public sealed class DashboardPageViewModel
 {
     public DashboardSummaryResponse Dashboard { get; set; } = new();
     public ProgressSummaryResponse Progress { get; set; } = new();
+    public IReadOnlyList<NotificationResponse> Notifications { get; set; } = [];
+    public AiProviderStatusResponse? AiProviderStatus { get; set; }
 }
 
 public sealed class GoalsPageViewModel
@@ -115,4 +126,17 @@ public sealed class RemindersPageViewModel
 public sealed class ProfilePageViewModel
 {
     public UserProfileResponse User { get; set; } = new();
+}
+
+public sealed class AssistantWidgetViewModel
+{
+    [Required]
+    [StringLength(1500, MinimumLength = 2)]
+    public string Message { get; set; } = string.Empty;
+
+    public AssistantChatResponse? LastResponse { get; set; }
+    public IReadOnlyList<StudyNoteResponse> Notes { get; set; } = [];
+
+    [StringLength(2000, MinimumLength = 3)]
+    public string NotePrompt { get; set; } = string.Empty;
 }

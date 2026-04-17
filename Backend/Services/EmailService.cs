@@ -10,22 +10,32 @@ public class EmailService(IOptions<SmtpOptions> smtpOptions, ILogger<EmailServic
 {
     private readonly SmtpOptions _smtpOptions = smtpOptions.Value;
 
-    public async Task SendReminderAsync(string toEmail, string subject, string body, CancellationToken cancellationToken = default)
+    public async Task<DeliveryResult> SendReminderAsync(string toEmail, string subject, string body, CancellationToken cancellationToken = default)
     {
         if (!_smtpOptions.IsConfigured)
         {
-            logger.LogInformation("SMTP not configured. Email reminder skipped.");
-            return;
+            logger.LogWarning("SMTP not configured. Email reminder delivery skipped for {Email}.", toEmail);
+            return DeliveryResult.Fail("SMTP is not configured.");
         }
 
-        using var message = new MailMessage(_smtpOptions.FromEmail, toEmail, subject, body);
-        using var client = new SmtpClient(_smtpOptions.Host, _smtpOptions.Port)
+        try
         {
-            EnableSsl = true,
-            Credentials = new NetworkCredential(_smtpOptions.Username, _smtpOptions.Password)
-        };
+            using var message = new MailMessage(_smtpOptions.FromEmail, toEmail, subject, body);
+            using var client = new SmtpClient(_smtpOptions.Host, _smtpOptions.Port)
+            {
+                EnableSsl = true,
+                Credentials = new NetworkCredential(_smtpOptions.Username, _smtpOptions.Password)
+            };
 
-        cancellationToken.ThrowIfCancellationRequested();
-        await client.SendMailAsync(message, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            await client.SendMailAsync(message, cancellationToken);
+            logger.LogInformation("Email reminder sent to {Email}.", toEmail);
+            return DeliveryResult.Ok("Email sent.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Email reminder delivery failed for {Email}.", toEmail);
+            return DeliveryResult.Fail($"Email delivery failed: {ex.Message}");
+        }
     }
 }

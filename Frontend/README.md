@@ -1,38 +1,38 @@
-# Frontend README
+# Frontend (AIStudyPlanner.Web)
 
-This folder now contains the ASP.NET MVC frontend that replaces the React app.
+ASP.NET MVC + Razor frontend for AI Study Planner.
 
-## Run
+## Key UX Features
 
-```powershell
+- Secure login/register screens (phone included in register)
+- Dashboard, goals, planner, progress, reminders, profile
+- Goal deletion from list and details views
+- Notification center integrated in top bar
+- Floating AI assistant popup in bottom-right
+- Assistant-driven note generation and mind map output preview
+- The assistant panel now renders Mermaid mind maps from Groq-backed responses when available, and keeps a polished fallback graph when Groq is unavailable.
+- Browser push subscription trigger from UI
+
+## Setup
+
+1. Configure env from `Frontend/.env.example`
+2. Point API base URL to backend
+
+```bash
+cd Frontend
+dotnet restore
 dotnet run
 ```
 
 ## Configuration
 
-Edit `appsettings.json` if your API runs on a different URL.
+`Api__BaseUrl` controls backend target.
 
-```json
-"Api": {
-	"BaseUrl": "https://localhost:7001/"
-}
-```
+Default local frontend URLs:
 
-## Pages Included
+- `https://localhost:7102`
+- `http://localhost:5102`
 
-- Landing
-- Login
-- Register
-- Dashboard
-- Create Goal
-- Goals List
-- Goal Details
-- Planner
-- Progress
-- Reminders
-- Profile
+## Browser Push
 
-## Notes
-
-- Authentication is stored in a cookie session in the ASP.NET frontend.
-- The frontend calls the backend API with the JWT returned from login/register.
+Frontend registers `wwwroot/sw.js` service worker and subscribes the browser using the backend public VAPID key endpoint.

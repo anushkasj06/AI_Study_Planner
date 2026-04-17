@@ -56,7 +56,13 @@ else
 
                 <div class="goal-card-footer">
                     <span class="muted-copy">@string.Join(", ", goal.Subjects)</span>
-                    <a class="link-button" href="/app/goals/@goal.Id">View details</a>
+                    <div class="task-actions-inline">
+                        <a class="link-button" href="/app/goals/@goal.Id">View details</a>
+                        <form method="post" asp-action="Delete" asp-route-goalId="@goal.Id" onsubmit="return confirm('Delete this goal and all linked plans/tasks?');">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="icon-button danger">Delete</button>
+                        </form>
+                    </div>
                 </div>
             </article>
         }

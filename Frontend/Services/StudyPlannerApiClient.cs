@@ -2,8 +2,10 @@ using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Diagnostics;
 using AIStudyPlanner.Web.Models;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 
 namespace AIStudyPlanner.Web.Services;
 
@@ -16,14 +18,24 @@ public sealed class StudyPlannerApiClient
 
     private readonly HttpClient _httpClient;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ILogger<StudyPlannerApiClient> _logger;
 
-    public StudyPlannerApiClient(HttpClient httpClient, IHttpContextAccessor httpContextAccessor, IOptions<ApiOptions> options)
+    public StudyPlannerApiClient(
+        HttpClient httpClient,
+        IHttpContextAccessor httpContextAccessor,
+        IOptions<ApiOptions> options,
+        ILogger<StudyPlannerApiClient> logger)
     {
         _httpClient = httpClient;
         _httpContextAccessor = httpContextAccessor;
-        _httpClient.BaseAddress = new Uri(options.Value.BaseUrl, UriKind.Absolute);
+        _logger = logger;
+
+        var configuredBaseUrl = options.Value.BaseUrl.Trim();
+        _httpClient.BaseAddress = new Uri(configuredBaseUrl, UriKind.Absolute);
         _httpClient.DefaultRequestHeaders.Accept.Clear();
         _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+        _logger.LogInformation("StudyPlannerApiClient initialized with backend base URL: {BaseUrl}", _httpClient.BaseAddress);
     }
 
     public Task<AuthResponse> LoginAsync(LoginViewModel model)
@@ -41,6 +53,7 @@ public sealed class StudyPlannerApiClient
         {
             model.FullName,
             model.Email,
+            model.PhoneNumber,
             model.Password
         });
     }
@@ -58,8 +71,13 @@ public sealed class StudyPlannerApiClient
     public Task<StudyGoalResponse> CreateGoalAsync(StudyGoalCreateRequest request)
         => SendAndReadAsync<StudyGoalResponse>(HttpMethod.Post, "/api/goals", request);
 
+    public Task DeleteGoalAsync(Guid goalId) => SendAsync(HttpMethod.Delete, $"/api/goals/{goalId}");
+
     public Task<StudyPlanResponse> GeneratePlanAsync(Guid goalId, bool regenerate)
         => SendAndReadAsync<StudyPlanResponse>(HttpMethod.Post, $"/api/ai/{(regenerate ? "regenerate-plan" : "generate-plan")}/{goalId}");
+
+    public Task<AiProviderStatusResponse> AiProviderStatusAsync()
+        => GetAsync<AiProviderStatusResponse>("/api/ai/provider-status");
 
     public Task<List<StudyPlanResponse>> PlansByGoalAsync(Guid goalId) => GetAsync<List<StudyPlanResponse>>($"/api/plans/goal/{goalId}");
 
@@ -76,10 +94,52 @@ public sealed class StudyPlannerApiClient
     public Task<ReminderResponse> CreateReminderAsync(ReminderCreateRequest request)
         => SendAndReadAsync<ReminderResponse>(HttpMethod.Post, "/api/reminders", request);
 
+    public Task<List<ReminderResponse>> CreateReminderBatchAsync(ReminderBatchCreateRequest request)
+        => SendAndReadAsync<List<ReminderResponse>>(HttpMethod.Post, "/api/reminders/batch", request);
+
+    public Task<AiReminderDraftResponse> GenerateAiReminderDraftAsync(AiReminderDraftRequest request)
+        => SendAndReadAsync<AiReminderDraftResponse>(HttpMethod.Post, "/api/reminders/ai/draft", request);
+
+    public Task<ReminderPipelineActionResponse> SyncAiRemindersAsync()
+        => SendAndReadAsync<ReminderPipelineActionResponse>(HttpMethod.Post, "/api/reminders/ai/sync");
+
+    public Task<ReminderPipelineActionResponse> ProcessDueRemindersNowAsync()
+        => SendAndReadAsync<ReminderPipelineActionResponse>(HttpMethod.Post, "/api/reminders/process-now");
+
     public Task<ReminderResponse> MarkReminderReadAsync(Guid reminderId)
         => SendAndReadAsync<ReminderResponse>(new HttpMethod("PATCH"), $"/api/reminders/{reminderId}/mark-read");
 
     public Task DeleteReminderAsync(Guid reminderId) => SendAsync(HttpMethod.Delete, $"/api/reminders/{reminderId}");
+
+    public Task<List<NotificationResponse>> NotificationsAsync(bool includeRead = true)
+        => GetAsync<List<NotificationResponse>>($"/api/notifications?includeRead={includeRead.ToString().ToLowerInvariant()}");
+
+    public Task<NotificationResponse> MarkNotificationReadAsync(Guid notificationId)
+        => SendAndReadAsync<NotificationResponse>(new HttpMethod("PATCH"), $"/api/notifications/{notificationId}/mark-read");
+
+    public Task MarkAllNotificationsReadAsync()
+        => SendAsync(new HttpMethod("PATCH"), "/api/notifications/mark-all-read");
+
+    public Task<WebPushPublicKeyResponse> GetWebPushPublicKeyAsync()
+        => GetAsync<WebPushPublicKeyResponse>("/api/notifications/webpush/public-key");
+
+    public Task SubscribeWebPushAsync(WebPushSubscriptionRequest request)
+        => SendAsync(HttpMethod.Post, "/api/notifications/webpush/subscribe", request);
+
+    public Task UnsubscribeWebPushAsync(WebPushSubscriptionRequest request)
+        => SendAsync(HttpMethod.Post, "/api/notifications/webpush/unsubscribe", request);
+
+    public Task<AssistantChatResponse> AssistantChatAsync(AssistantChatRequest request)
+        => SendAndReadAsync<AssistantChatResponse>(HttpMethod.Post, "/api/assistant/chat", request);
+
+    public Task<List<StudyNoteResponse>> AssistantNotesAsync()
+        => GetAsync<List<StudyNoteResponse>>("/api/assistant/notes");
+
+    public Task<StudyNoteResponse> CreateAssistantNoteAsync(CreateNoteFromAssistantRequest request)
+        => SendAndReadAsync<StudyNoteResponse>(HttpMethod.Post, "/api/assistant/notes", request);
+
+    public Task DeleteAssistantNoteAsync(Guid noteId)
+        => SendAsync(HttpMethod.Delete, $"/api/assistant/notes/{noteId}");
 
     private async Task<T> GetAsync<T>(string path)
     {
@@ -109,7 +169,50 @@ public sealed class StudyPlannerApiClient
             request.Content = JsonContent.Create(body, options: JsonOptions);
         }
 
-        return await _httpClient.SendAsync(request);
+        var targetUri = request.RequestUri is not null && request.RequestUri.IsAbsoluteUri
+            ? request.RequestUri
+            : new Uri(_httpClient.BaseAddress!, path);
+
+        _logger.LogDebug("Calling backend API {Method} {Uri}", method, targetUri);
+        var stopwatch = Stopwatch.StartNew();
+
+        try
+        {
+            var response = await _httpClient.SendAsync(request);
+            stopwatch.Stop();
+
+            if (response.IsSuccessStatusCode)
+            {
+                _logger.LogInformation(
+                    "Backend API {Method} {Uri} returned {StatusCode} in {ElapsedMs}ms",
+                    method,
+                    targetUri,
+                    (int)response.StatusCode,
+                    stopwatch.ElapsedMilliseconds);
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "Backend API {Method} {Uri} returned {StatusCode} in {ElapsedMs}ms",
+                    method,
+                    targetUri,
+                    (int)response.StatusCode,
+                    stopwatch.ElapsedMilliseconds);
+            }
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+            _logger.LogError(
+                ex,
+                "Backend API call failed for {Method} {Uri} after {ElapsedMs}ms",
+                method,
+                targetUri,
+                stopwatch.ElapsedMilliseconds);
+            throw;
+        }
     }
 
     private void AttachAuthorizationHeader(HttpRequestMessage request)
@@ -163,6 +266,11 @@ public sealed class StudyPlannerApiClient
             if (root.TryGetProperty("detail", out var detail) && detail.ValueKind == JsonValueKind.String)
             {
                 return detail.GetString() ?? string.Empty;
+            }
+
+            if (root.TryGetProperty("message", out var message) && message.ValueKind == JsonValueKind.String)
+            {
+                return message.GetString() ?? string.Empty;
             }
 
             if (root.TryGetProperty("title", out var title) && title.ValueKind == JsonValueKind.String)

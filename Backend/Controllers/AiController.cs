@@ -10,6 +10,12 @@ namespace AIStudyPlanner.Api.Controllers;
 [Route("api/[controller]")]
 public class AiController(IPlanService planService, ICurrentUserService currentUserService) : ControllerBase
 {
+    [HttpGet("provider-status")]
+    public async Task<ActionResult<AiProviderStatusResponse>> ProviderStatus(CancellationToken cancellationToken)
+    {
+        return Ok(await planService.GetLatestProviderStatusAsync(currentUserService.GetUserId(), cancellationToken));
+    }
+
     [HttpPost("generate-plan/{goalId:guid}")]
     public async Task<ActionResult<StudyPlanResponse>> GeneratePlan(Guid goalId, CancellationToken cancellationToken)
     {

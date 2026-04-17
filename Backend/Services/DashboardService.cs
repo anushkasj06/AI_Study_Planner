@@ -14,6 +14,7 @@ public class DashboardService(ApplicationDbContext dbContext, IProgressService p
         var activeGoals = await dbContext.StudyGoals.CountAsync(x => x.UserId == userId && x.Status == GoalStatus.Active);
         var completedTasks = await dbContext.StudyTasks.CountAsync(x => x.UserId == userId && x.IsCompleted);
         var pendingTasks = await dbContext.StudyTasks.CountAsync(x => x.UserId == userId && !x.IsCompleted);
+        var unreadNotifications = await dbContext.UserNotifications.CountAsync(x => x.UserId == userId && !x.IsRead);
         var progressSummary = await progressService.GetSummaryAsync(userId);
 
         var reminders = await dbContext.Reminders
@@ -49,6 +50,7 @@ public class DashboardService(ApplicationDbContext dbContext, IProgressService p
             PendingTasks = pendingTasks,
             HoursStudiedThisWeek = progressSummary.CompletedHoursThisWeek,
             StreakCount = progressSummary.DailyStreak,
+            UnreadNotifications = unreadNotifications,
             UpcomingReminders = reminders,
             ProgressByGoal = goalProgress
         };

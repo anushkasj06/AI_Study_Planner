@@ -2,6 +2,7 @@ using AIStudyPlanner.Api.DTOs.Auth;
 using AIStudyPlanner.Api.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace AIStudyPlanner.Api.Controllers;
 
@@ -18,6 +19,7 @@ public class AuthController(IAuthService authService, ICurrentUserService curren
 
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting("AuthLoginPolicy")]
     public async Task<ActionResult<AuthResponse>> Login(LoginRequest request)
     {
         return Ok(await authService.LoginAsync(request));

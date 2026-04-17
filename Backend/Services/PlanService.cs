@@ -4,6 +4,7 @@ using AIStudyPlanner.Api.DTOs.Tasks;
 using AIStudyPlanner.Api.Entities;
 using AIStudyPlanner.Api.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace AIStudyPlanner.Api.Services;
 
@@ -12,6 +13,37 @@ public class PlanService(
     IGeminiService geminiService,
     ILogger<PlanService> logger) : IPlanService
 {
+    public async Task<AiProviderStatusResponse> GetLatestProviderStatusAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var latestRequest = await dbContext.AiRequestLogs
+            .Where(x => x.UserId == userId)
+            .OrderByDescending(x => x.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (latestRequest is null)
+        {
+            return new AiProviderStatusResponse
+            {
+                Provider = "None",
+                RequestStatus = "None",
+                UsedFallback = false,
+                Message = "No AI plan generation attempts yet."
+            };
+        }
+
+        var provider = InferProvider(latestRequest);
+
+        return new AiProviderStatusResponse
+        {
+            Provider = provider,
+            RequestStatus = latestRequest.Status.ToString(),
+            UsedFallback = latestRequest.Status == AiRequestStatus.Fallback,
+            StudyGoalId = latestRequest.StudyGoalId,
+            LastAttemptAtUtc = latestRequest.CreatedAt,
+            Message = BuildProviderStatusMessage(latestRequest, provider)
+        };
+    }
+
     public async Task<StudyPlanResponse> GeneratePlanAsync(Guid userId, Guid goalId, bool forceRegenerate, CancellationToken cancellationToken = default)
     {
         var user = await dbContext.Users.FindAsync([userId], cancellationToken)
@@ -47,7 +79,8 @@ public class PlanService(
         GeneratedPlanResult generated;
         try
         {
-            generated = await geminiService.GenerateStudyPlanAsync(user, goal, cancellationToken);
+            var planningContext = await BuildPlanningContextAsync(userId, goalId, cancellationToken);
+            generated = await geminiService.GenerateStudyPlanAsync(user, goal, planningContext, cancellationToken);
             dbContext.AiRequestLogs.Add(new AiRequestLog
             {
                 Id = Guid.NewGuid(),
@@ -265,4 +298,164 @@ public class PlanService(
         CompletedAt = task.CompletedAt,
         GoalTitle = task.StudyGoal?.Title ?? string.Empty
     };
+
+    private async Task<string> BuildPlanningContextAsync(Guid userId, Guid goalId, CancellationToken cancellationToken)
+    {
+        var sevenDaysAgo = DateTime.UtcNow.Date.AddDays(-7);
+
+        var recentHours = await dbContext.ProgressLogs
+            .Where(x => x.UserId == userId && x.Date >= sevenDaysAgo)
+            .SumAsync(x => (decimal?)x.HoursSpent, cancellationToken) ?? 0;
+
+        var totalTasksForGoal = await dbContext.StudyTasks
+            .CountAsync(x => x.UserId == userId && x.StudyGoalId == goalId, cancellationToken);
+
+        var completedTasksForGoal = await dbContext.StudyTasks
+            .CountAsync(x => x.UserId == userId && x.StudyGoalId == goalId && x.IsCompleted, cancellationToken);
+
+        var pendingReminders = await dbContext.Reminders
+            .CountAsync(x => x.UserId == userId && !x.IsSent, cancellationToken);
+
+        return $"recentHoursLast7Days={recentHours};goalTasksCompleted={completedTasksForGoal};goalTasksTotal={totalTasksForGoal};pendingReminders={pendingReminders}";
+    }
+
+    private static string InferProvider(AiRequestLog requestLog)
+    {
+        if (requestLog.Status == AiRequestStatus.Fallback)
+        {
+            return "Fallback";
+        }
+
+        if (requestLog.Status == AiRequestStatus.Failed)
+        {
+            return "Unknown";
+        }
+
+        if (string.IsNullOrWhiteSpace(requestLog.Response))
+        {
+            return "Unknown";
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(requestLog.Response);
+            var root = document.RootElement;
+
+            if (root.TryGetProperty("candidates", out _))
+            {
+                return "Gemini";
+            }
+
+            if (root.TryGetProperty("choices", out _))
+            {
+                return "Groq";
+            }
+
+            if (root.TryGetProperty("provider", out var providerElement) &&
+                providerElement.ValueKind == JsonValueKind.String)
+            {
+                return providerElement.GetString() ?? "Unknown";
+            }
+        }
+        catch (JsonException)
+        {
+            // Ignore parse issues and use a string heuristic below.
+        }
+
+        if (requestLog.Response.Contains("\"candidates\"", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Gemini";
+        }
+
+        if (requestLog.Response.Contains("\"choices\"", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Groq";
+        }
+
+        return "Unknown";
+    }
+
+    private static string BuildProviderStatusMessage(AiRequestLog requestLog, string provider)
+    {
+        if (requestLog.Status == AiRequestStatus.Success)
+        {
+            return $"Last AI plan generation succeeded via {provider}.";
+        }
+
+        if (requestLog.Status == AiRequestStatus.Failed)
+        {
+            if (!string.IsNullOrWhiteSpace(requestLog.ErrorMessage))
+            {
+                return $"Last AI plan generation failed: {Truncate(requestLog.ErrorMessage, 240)}";
+            }
+
+            return "Last AI plan generation failed.";
+        }
+
+        var fallbackDetails = ExtractFallbackDetails(requestLog.Response);
+        if (string.IsNullOrWhiteSpace(fallbackDetails))
+        {
+            return "Used deterministic fallback because AI providers were unavailable.";
+        }
+
+        return $"Used deterministic fallback. {fallbackDetails}";
+    }
+
+    private static string ExtractFallbackDetails(string response)
+    {
+        if (string.IsNullOrWhiteSpace(response))
+        {
+            return string.Empty;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(response);
+            var root = document.RootElement;
+
+            string? geminiError = null;
+            string? groqError = null;
+
+            if (root.TryGetProperty("geminiError", out var geminiElement) && geminiElement.ValueKind == JsonValueKind.String)
+            {
+                geminiError = geminiElement.GetString();
+            }
+
+            if (root.TryGetProperty("groqError", out var groqElement) && groqElement.ValueKind == JsonValueKind.String)
+            {
+                groqError = groqElement.GetString();
+            }
+
+            if (!string.IsNullOrWhiteSpace(geminiError) && !string.IsNullOrWhiteSpace(groqError))
+            {
+                return $"Gemini: {Truncate(geminiError, 120)} Groq: {Truncate(groqError, 120)}";
+            }
+
+            if (!string.IsNullOrWhiteSpace(geminiError))
+            {
+                return $"Gemini: {Truncate(geminiError, 180)}";
+            }
+
+            if (!string.IsNullOrWhiteSpace(groqError))
+            {
+                return $"Groq: {Truncate(groqError, 180)}";
+            }
+        }
+        catch (JsonException)
+        {
+            // Ignore parse issues and fall back to a generic message.
+        }
+
+        return string.Empty;
+    }
+
+    private static string Truncate(string value, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value.Length <= maxLength)
+        {
+            return value;
+        }
+
+        return value[..maxLength];
+    }
 }

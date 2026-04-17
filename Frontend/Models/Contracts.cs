@@ -49,7 +49,22 @@ public enum TaskType
 public enum ReminderChannel
 {
     InApp,
-    Email
+    Email,
+    BrowserPush
+}
+
+public enum ReminderDeliveryStatus
+{
+    Pending,
+    Sent,
+    Failed
+}
+
+public enum NotificationType
+{
+    Reminder,
+    StudyInsight,
+    System
 }
 
 public sealed class AuthResponse
@@ -63,6 +78,8 @@ public sealed class UserProfileResponse
     public Guid Id { get; set; }
     public string FullName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public string PhoneNumber { get; set; } = string.Empty;
+    public DateTime? LastLoginAtUtc { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 
@@ -147,6 +164,16 @@ public sealed class StudyPlanResponse
     public IReadOnlyCollection<StudyTaskResponse> Tasks { get; set; } = [];
 }
 
+public sealed class AiProviderStatusResponse
+{
+    public string Provider { get; set; } = "Unknown";
+    public string RequestStatus { get; set; } = "None";
+    public bool UsedFallback { get; set; }
+    public Guid? StudyGoalId { get; set; }
+    public DateTime? LastAttemptAtUtc { get; set; }
+    public string Message { get; set; } = string.Empty;
+}
+
 public class ReminderCreateRequest
 {
     public Guid? StudyTaskId { get; set; }
@@ -154,6 +181,40 @@ public class ReminderCreateRequest
     public string Message { get; set; } = string.Empty;
     public DateTime ReminderDateTime { get; set; }
     public ReminderChannel Channel { get; set; } = ReminderChannel.InApp;
+}
+
+public sealed class ReminderBatchCreateRequest
+{
+    public Guid? StudyTaskId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public DateTime ReminderDateTime { get; set; }
+    public List<ReminderChannel> Channels { get; set; } = [];
+}
+
+public sealed class AiReminderDraftRequest
+{
+    public Guid? StudyTaskId { get; set; }
+    public Guid? StudyGoalId { get; set; }
+    public string Prompt { get; set; } = string.Empty;
+    public DateTime? PreferredReminderDateTime { get; set; }
+    public bool PreferEmail { get; set; }
+    public bool PreferBrowserPush { get; set; }
+}
+
+public sealed class AiReminderDraftResponse
+{
+    public string Title { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public DateTime ReminderDateTime { get; set; }
+    public IReadOnlyCollection<ReminderChannel> RecommendedChannels { get; set; } = [];
+    public string Reasoning { get; set; } = string.Empty;
+}
+
+public sealed class ReminderPipelineActionResponse
+{
+    public int Count { get; set; }
+    public string Message { get; set; } = string.Empty;
 }
 
 public sealed class ReminderUpdateRequest : ReminderCreateRequest
@@ -172,6 +233,10 @@ public sealed class ReminderResponse
     public bool IsSent { get; set; }
     public bool IsRead { get; set; }
     public ReminderChannel Channel { get; set; }
+    public ReminderDeliveryStatus DeliveryStatus { get; set; }
+    public int DeliveryAttempts { get; set; }
+    public DateTime? LastDeliveryAttemptAtUtc { get; set; }
+    public string LastDeliveryError { get; set; } = string.Empty;
 }
 
 public sealed class ProgressSummaryResponse
@@ -201,6 +266,7 @@ public sealed class DashboardSummaryResponse
     public int PendingTasks { get; set; }
     public decimal HoursStudiedThisWeek { get; set; }
     public int StreakCount { get; set; }
+    public int UnreadNotifications { get; set; }
     public IReadOnlyCollection<UpcomingReminderItem> UpcomingReminders { get; set; } = [];
     public IReadOnlyCollection<GoalProgressWidget> ProgressByGoal { get; set; } = [];
 }
@@ -240,4 +306,66 @@ public sealed class ProgressLogResponse
     public string Notes { get; set; } = string.Empty;
     public int CompletionPercentage { get; set; }
     public DateTime CreatedAt { get; set; }
+}
+
+public sealed class NotificationResponse
+{
+    public Guid Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public NotificationType Type { get; set; }
+    public bool IsRead { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+public sealed class WebPushSubscriptionRequest
+{
+    public string Endpoint { get; set; } = string.Empty;
+    public string P256dh { get; set; } = string.Empty;
+    public string Auth { get; set; } = string.Empty;
+}
+
+public sealed class WebPushPublicKeyResponse
+{
+    public string PublicKey { get; set; } = string.Empty;
+}
+
+public sealed class AssistantChatRequest
+{
+    public string Message { get; set; } = string.Empty;
+}
+
+public sealed class AssistantChatResponse
+{
+    public string Reply { get; set; } = string.Empty;
+    public List<AssistantSuggestion> Suggestions { get; set; } = [];
+    public string MindMapMermaid { get; set; } = string.Empty;
+    public string NoteTitle { get; set; } = string.Empty;
+    public string NoteMarkdown { get; set; } = string.Empty;
+    public string Provider { get; set; } = string.Empty;
+    public bool UsedFallback { get; set; }
+}
+
+public sealed class AssistantSuggestion
+{
+    public string Type { get; set; } = string.Empty;
+    public string Label { get; set; } = string.Empty;
+    public string? Payload { get; set; }
+}
+
+public sealed class CreateNoteFromAssistantRequest
+{
+    public Guid? StudyGoalId { get; set; }
+    public string Prompt { get; set; } = string.Empty;
+}
+
+public sealed class StudyNoteResponse
+{
+    public Guid Id { get; set; }
+    public Guid? StudyGoalId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string ContentMarkdown { get; set; } = string.Empty;
+    public string MindMapMermaid { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 }

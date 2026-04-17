@@ -8,6 +8,7 @@ public class DashboardSummaryResponse
     public int PendingTasks { get; set; }
     public decimal HoursStudiedThisWeek { get; set; }
     public int StreakCount { get; set; }
+    public int UnreadNotifications { get; set; }
     public IReadOnlyCollection<UpcomingReminderItem> UpcomingReminders { get; set; } = [];
     public IReadOnlyCollection<GoalProgressWidget> ProgressByGoal { get; set; } = [];
 }

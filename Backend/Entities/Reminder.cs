@@ -11,6 +11,10 @@ public class Reminder
     public bool IsSent { get; set; }
     public bool IsRead { get; set; }
     public ReminderChannel Channel { get; set; } = ReminderChannel.InApp;
+    public ReminderDeliveryStatus DeliveryStatus { get; set; } = ReminderDeliveryStatus.Pending;
+    public int DeliveryAttempts { get; set; }
+    public DateTime? LastDeliveryAttemptAtUtc { get; set; }
+    public string LastDeliveryError { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

@@ -9,10 +9,12 @@ namespace AIStudyPlanner.Web.Controllers;
 public sealed class GoalsController : Controller
 {
     private readonly StudyPlannerApiClient _apiClient;
+    private readonly ILogger<GoalsController> _logger;
 
-    public GoalsController(StudyPlannerApiClient apiClient)
+    public GoalsController(StudyPlannerApiClient apiClient, ILogger<GoalsController> logger)
     {
         _apiClient = apiClient;
+        _logger = logger;
     }
 
     [HttpGet("/app/goals")]
@@ -70,6 +72,7 @@ public sealed class GoalsController : Controller
         }
         catch (Exception exception)
         {
+            _logger.LogWarning(exception, "Goal creation failed for title {Title}", model.Title);
             ModelState.AddModelError(string.Empty, exception.Message);
             return View(model);
         }
@@ -95,6 +98,24 @@ public sealed class GoalsController : Controller
         await _apiClient.GeneratePlanAsync(goalId, regenerate: true);
         TempData["SuccessMessage"] = "Plan regenerated successfully.";
         return RedirectToAction(nameof(Details), new { goalId });
+    }
+
+    [HttpPost("/app/goals/{goalId:guid}/delete")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(Guid goalId)
+    {
+        try
+        {
+            await _apiClient.DeleteGoalAsync(goalId);
+            TempData["SuccessMessage"] = "Goal deleted successfully.";
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(exception, "Goal delete failed for goal {GoalId}", goalId);
+            TempData["ErrorMessage"] = exception.Message;
+        }
+
+        return RedirectToAction(nameof(Index));
     }
 
     private static List<string> SplitSubjects(string subjects)

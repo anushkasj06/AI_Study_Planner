@@ -6,6 +6,7 @@ namespace AIStudyPlanner.Api.Interfaces;
 public interface IPlanService
 {
     Task<StudyPlanResponse> GeneratePlanAsync(Guid userId, Guid goalId, bool forceRegenerate, CancellationToken cancellationToken = default);
+    Task<AiProviderStatusResponse> GetLatestProviderStatusAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<StudyPlanResponse>> GetPlansAsync(Guid userId);
     Task<StudyPlanResponse> GetPlanByIdAsync(Guid userId, Guid planId);
     Task<IReadOnlyCollection<StudyPlanResponse>> GetPlansByGoalAsync(Guid userId, Guid goalId);

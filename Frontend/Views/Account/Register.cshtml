@@ -27,6 +27,12 @@
         </label>
 
         <label class="field">
+            <span class="field-label">Phone number</span>
+            <input asp-for="PhoneNumber" class="field-control" placeholder="+919876543210" />
+            <span asp-validation-for="PhoneNumber" class="field-error"></span>
+        </label>
+
+        <label class="field">
             <span class="field-label">Password</span>
             <input asp-for="Password" type="password" class="field-control" placeholder="Password" />
             <span asp-validation-for="Password" class="field-error"></span>

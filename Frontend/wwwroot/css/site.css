@@ -383,7 +383,7 @@ textarea {
 }
 
 .stats-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
 }
 
 .stat-card,
@@ -1130,6 +1130,54 @@ textarea.field-control {
   gap: 1rem;
 }
 
+.reminder-studio {
+  gap: 1rem;
+}
+
+.reminder-template-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.channel-fieldset {
+  border: 1px solid rgba(203, 213, 225, 0.8);
+  border-radius: 1rem;
+  padding: 0.8rem;
+}
+
+.channel-toggle-grid {
+  margin-top: 0.5rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.channel-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f8fafc;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 0.8rem;
+  padding: 0.55rem 0.7rem;
+}
+
+.delivery-pill.sent {
+  background: #e8f9f1;
+  color: #0f766e;
+}
+
+.delivery-pill.failed {
+  background: #fff1f2;
+  color: #b91c1c;
+}
+
+.delivery-pill.pending {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
 .form-grid {
   display: grid;
   gap: 1rem;
@@ -1155,13 +1203,239 @@ textarea.field-control {
   margin-top: 0.55rem;
 }
 
+.hidden {
+  display: none !important;
+}
+
+.notification-panel {
+  margin-bottom: 0.5rem;
+}
+
+.assistant-fab-container {
+  position: fixed;
+  right: 1.2rem;
+  bottom: 1.2rem;
+  z-index: 30;
+  display: grid;
+  justify-items: end;
+  gap: 0.75rem;
+}
+
+.assistant-fab {
+  width: 3.6rem;
+  height: 3.6rem;
+  border-radius: 999px;
+  border: 0;
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  background: linear-gradient(135deg, #18263f, #0f766e);
+  box-shadow: 0 18px 35px rgba(15, 23, 42, 0.3);
+}
+
+.assistant-panel {
+  width: min(96vw, 30rem);
+  max-height: min(84vh, 48rem);
+  padding: 1.1rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.assistant-panel--expanded {
+  position: fixed;
+  inset: 1rem;
+  width: auto;
+  max-width: none;
+  max-height: none;
+  height: calc(100vh - 2rem);
+  overflow: hidden;
+  z-index: 50;
+  padding: 1.15rem;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto auto minmax(0, 0.7fr);
+  box-shadow: 0 28px 60px rgba(15, 23, 42, 0.3);
+}
+
+.assistant-window-open .assistant-fab-container {
+  z-index: 20;
+}
+
+.assistant-window-open .assistant-fab {
+  display: none;
+}
+
+.assistant-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.assistant-header-actions {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.assistant-header h3 {
+  margin: 0.25rem 0 0;
+}
+
+.assistant-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.assistant-chip {
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  padding: 0.52rem 0.8rem;
+  color: var(--ink);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1.15;
+}
+
+.assistant-messages {
+  display: grid;
+  gap: 0.7rem;
+  overflow: auto;
+  max-height: 18rem;
+}
+
+.assistant-message {
+  padding: 0.9rem 1rem;
+  border-radius: 1rem;
+  font-size: 0.95rem;
+  line-height: 1.58;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.assistant-message.bot {
+  background: #f8fafc;
+}
+
+.assistant-message.user {
+  background: #effaf8;
+  justify-self: end;
+}
+
+.assistant-note-preview {
+  border-style: dashed;
+  background: #fffaf0;
+}
+
+.assistant-message-title {
+  margin: 0 0 0.4rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.assistant-mindmap-panel {
+  display: grid;
+  gap: 0.8rem;
+  padding: 0.95rem;
+  border-radius: 1.05rem;
+  border: 1px solid rgba(203, 213, 225, 0.75);
+  background: rgba(248, 250, 252, 0.96);
+}
+
+.assistant-mindmap-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.assistant-mindmap-head h4 {
+  margin: 0.2rem 0 0;
+}
+
+.assistant-mindmap {
+  overflow: auto;
+  padding: 0.55rem;
+  border-radius: 0.95rem;
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.assistant-mermaid {
+  min-height: 14rem;
+}
+
+.assistant-note-graph {
+  margin-top: 0.45rem;
+  padding: 0.65rem;
+  border-radius: 0.95rem;
+  background: #f8fafc;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.assistant-note-graph .mermaid {
+  min-height: 10rem;
+}
+
+.assistant-form,
+.assistant-note-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+}
+
+.assistant-panel--expanded .assistant-messages,
+.assistant-panel--expanded .assistant-notes {
+  max-height: none;
+}
+
+.assistant-panel--expanded .assistant-mindmap-panel {
+  flex: 0 0 auto;
+}
+
+.assistant-panel--expanded .assistant-form,
+.assistant-panel--expanded .assistant-note-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.assistant-notes {
+  display: grid;
+  gap: 0.75rem;
+  overflow: auto;
+  max-height: 12rem;
+}
+
+.assistant-note-card {
+  padding: 0.85rem 0.95rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: #fff;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.assistant-note-card h4 {
+  margin: 0;
+  font-size: 0.98rem;
+}
+
+.assistant-note-card pre {
+  margin: 0;
+  white-space: pre-wrap;
+  color: #475569;
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
 @media (max-width: 1180px) {
   .app-shell,
   .two-column-grid,
   .progress-layout,
-  .reminders-layout,
-  .hero-grid {
-    grid-template-columns: 1fr;
+  .assistant-panel {
+    width: min(95vw, 28rem);
+    max-height: min(82vh, 44rem);
   }
 
   .stats-grid,
@@ -1192,6 +1466,7 @@ textarea.field-control {
   .detail-meta-grid,
   .week-grid,
   .form-grid,
+  .channel-toggle-grid,
   .metric-grid,
   .profile-grid,
   .landing-metrics {
@@ -1265,5 +1540,15 @@ textarea.field-control {
   .landing-header {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .assistant-panel {
+    width: min(95vw, 28rem);
+    max-height: min(82vh, 44rem);
+  }
+
+  .assistant-panel--expanded {
+    inset: 0.5rem;
+    height: calc(100vh - 1rem);
   }
 }

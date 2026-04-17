@@ -7,6 +7,7 @@
     <p class="eyebrow">Profile</p>
     <h2>@Model.User.FullName</h2>
     <p class="helper-copy">@Model.User.Email</p>
+    <p class="helper-copy">@Model.User.PhoneNumber</p>
 
     <div class="profile-grid">
         <article class="metric-card">
@@ -16,6 +17,10 @@
         <article class="metric-card">
             <span>Auth mode</span>
             <strong>JWT bearer token</strong>
+        </article>
+        <article class="metric-card">
+            <span>Last login</span>
+            <strong>@(Model.User.LastLoginAtUtc?.ToString("dd MMM yyyy, hh:mm tt") ?? "First login")</strong>
         </article>
     </div>
 

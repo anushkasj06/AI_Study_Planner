@@ -121,11 +121,27 @@ namespace AIStudyPlanner.Api.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int>("DeliveryAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DeliveryStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
                     b.Property<bool>("IsRead")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<bool>("IsSent")
                         .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("LastDeliveryAttemptAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("LastDeliveryError")
+                        .IsRequired()
+                        .HasMaxLength(800)
+                        .HasColumnType("varchar(800)");
 
                     b.Property<string>("Message")
                         .IsRequired()
@@ -152,6 +168,8 @@ namespace AIStudyPlanner.Api.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("StudyTaskId");
+
+                    b.HasIndex("DeliveryStatus", "ReminderDateTime");
 
                     b.HasIndex("IsSent", "ReminderDateTime");
 
@@ -226,6 +244,46 @@ namespace AIStudyPlanner.Api.Migrations
                     b.HasIndex("UserId", "Status");
 
                     b.ToTable("StudyGoals");
+                });
+
+            modelBuilder.Entity("AIStudyPlanner.Api.Entities.StudyNote", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("ContentMarkdown")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("MindMapMermaid")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<Guid?>("StudyGoalId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(180)
+                        .HasColumnType("varchar(180)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StudyGoalId");
+
+                    b.HasIndex("UserId", "CreatedAt");
+
+                    b.ToTable("StudyNotes");
                 });
 
             modelBuilder.Entity("AIStudyPlanner.Api.Entities.StudyPlan", b =>
@@ -369,14 +427,28 @@ namespace AIStudyPlanner.Api.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)");
 
+                    b.Property<int>("FailedLoginAttempts")
+                        .HasColumnType("int");
+
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasMaxLength(120)
                         .HasColumnType("varchar(120)");
 
+                    b.Property<DateTime?>("LastLoginAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("LockedUntilUtc")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
@@ -386,7 +458,94 @@ namespace AIStudyPlanner.Api.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
+                    b.HasIndex("PhoneNumber")
+                        .IsUnique();
+
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("AIStudyPlanner.Api.Entities.UserNotification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<Guid?>("ReminderId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReminderId");
+
+                    b.HasIndex("UserId", "CreatedAt");
+
+                    b.HasIndex("UserId", "IsRead");
+
+                    b.ToTable("UserNotifications");
+                });
+
+            modelBuilder.Entity("AIStudyPlanner.Api.Entities.WebPushSubscription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Auth")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("varchar(300)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Endpoint")
+                        .IsRequired()
+                        .HasMaxLength(700)
+                        .HasColumnType("varchar(700)");
+
+                    b.Property<string>("P256dh")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("varchar(300)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Endpoint")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("WebPushSubscriptions");
                 });
 
             modelBuilder.Entity("AIStudyPlanner.Api.Entities.AiRequestLog", b =>
@@ -463,6 +622,24 @@ namespace AIStudyPlanner.Api.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("AIStudyPlanner.Api.Entities.StudyNote", b =>
+                {
+                    b.HasOne("AIStudyPlanner.Api.Entities.StudyGoal", "StudyGoal")
+                        .WithMany()
+                        .HasForeignKey("StudyGoalId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("AIStudyPlanner.Api.Entities.User", "User")
+                        .WithMany("StudyNotes")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StudyGoal");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("AIStudyPlanner.Api.Entities.StudyPlan", b =>
                 {
                     b.HasOne("AIStudyPlanner.Api.Entities.StudyGoal", "StudyGoal")
@@ -509,6 +686,35 @@ namespace AIStudyPlanner.Api.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("AIStudyPlanner.Api.Entities.UserNotification", b =>
+                {
+                    b.HasOne("AIStudyPlanner.Api.Entities.Reminder", "Reminder")
+                        .WithMany()
+                        .HasForeignKey("ReminderId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("AIStudyPlanner.Api.Entities.User", "User")
+                        .WithMany("Notifications")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Reminder");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("AIStudyPlanner.Api.Entities.WebPushSubscription", b =>
+                {
+                    b.HasOne("AIStudyPlanner.Api.Entities.User", "User")
+                        .WithMany("WebPushSubscriptions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("AIStudyPlanner.Api.Entities.StudyGoal", b =>
                 {
                     b.Navigation("AiRequestLogs");
@@ -536,15 +742,21 @@ namespace AIStudyPlanner.Api.Migrations
                 {
                     b.Navigation("AiRequestLogs");
 
+                    b.Navigation("Notifications");
+
                     b.Navigation("ProgressLogs");
 
                     b.Navigation("Reminders");
 
                     b.Navigation("StudyGoals");
 
+                    b.Navigation("StudyNotes");
+
                     b.Navigation("StudyPlans");
 
                     b.Navigation("StudyTasks");
+
+                    b.Navigation("WebPushSubscriptions");
                 });
 #pragma warning restore 612, 618
         }

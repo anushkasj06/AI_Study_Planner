@@ -8,11 +8,16 @@ public sealed class AccountController : Controller
 {
     private readonly StudyPlannerApiClient _apiClient;
     private readonly AuthSessionService _authSessionService;
+    private readonly ILogger<AccountController> _logger;
 
-    public AccountController(StudyPlannerApiClient apiClient, AuthSessionService authSessionService)
+    public AccountController(
+        StudyPlannerApiClient apiClient,
+        AuthSessionService authSessionService,
+        ILogger<AccountController> logger)
     {
         _apiClient = apiClient;
         _authSessionService = authSessionService;
+        _logger = logger;
     }
 
     [HttpGet("/login")]
@@ -44,6 +49,7 @@ public sealed class AccountController : Controller
         }
         catch (Exception exception)
         {
+            _logger.LogWarning(exception, "Login failed for email {Email}", model.Email);
             ModelState.AddModelError(string.Empty, exception.Message);
             return View(model);
         }
@@ -78,6 +84,7 @@ public sealed class AccountController : Controller
         }
         catch (Exception exception)
         {
+            _logger.LogWarning(exception, "Registration failed for email {Email}", model.Email);
             ModelState.AddModelError(string.Empty, exception.Message);
             return View(model);
         }

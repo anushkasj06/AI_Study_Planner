@@ -23,6 +23,24 @@
         <p class="stat-label">Current streak</p>
         <p class="stat-value">@dashboard.StreakCount days</p>
     </article>
+    <article class="stat-card glass-panel">
+        <p class="stat-label">Unread notifications</p>
+        <p class="stat-value brand">@dashboard.UnreadNotifications</p>
+    </article>
+    <article class="stat-card glass-panel">
+        <p class="stat-label">Last AI provider</p>
+        <p class="stat-value accent">@(Model.AiProviderStatus?.Provider ?? "None")</p>
+        <p class="helper-copy">
+            @if (Model.AiProviderStatus?.LastAttemptAtUtc is DateTime lastAttempt)
+            {
+                @lastAttempt.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")
+            }
+            else
+            {
+                @:No generation attempt yet
+            }
+        </p>
+    </article>
 </section>
 
 <section class="two-column-grid">
@@ -73,10 +91,15 @@
         <article class="glass-panel panel-card">
             <div class="panel-heading">
                 <div>
-                    <p class="eyebrow">Reminders</p>
+                    <p class="eyebrow">Reminders & Alerts</p>
                     <h2>Upcoming reminders</h2>
                 </div>
             </div>
+
+            @if (Model.AiProviderStatus is not null)
+            {
+                <p class="helper-copy">AI status: @Model.AiProviderStatus.Message</p>
+            }
 
             @if (dashboard.UpcomingReminders.Count == 0)
             {
@@ -96,6 +119,22 @@
                                 <p class="reminder-meta">@reminder.ReminderDateTime.ToString("dd MMM yyyy, hh:mm tt")</p>
                             </div>
                             <span class="pill @(reminder.IsRead ? "muted" : "brand")">@(reminder.IsRead ? "Read" : "Unread")</span>
+                        </div>
+                    }
+                </div>
+            }
+
+            @if (Model.Notifications.Count > 0)
+            {
+                <div class="goal-progress-list">
+                    @foreach (var notification in Model.Notifications)
+                    {
+                        <div class="goal-progress-card">
+                            <div class="goal-progress-head">
+                                <h3>@notification.Title</h3>
+                                <span class="pill brand">@notification.Type</span>
+                            </div>
+                            <p class="helper-copy">@notification.Message</p>
                         </div>
                     }
                 </div>

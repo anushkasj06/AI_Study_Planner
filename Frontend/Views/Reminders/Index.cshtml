@@ -1,56 +1,100 @@
 @model RemindersPageViewModel
 @{
     ViewData["Title"] = "Reminders";
-    ViewData["Subtitle"] = "Time your next study block before the day gets away.";
+    ViewData["Subtitle"] = "AI-powered reminder studio with in-app, email, and browser push delivery.";
     var form = Model.Form;
 }
 
 <section class="reminders-layout">
-    <form method="post" asp-action="Create" class="glass-panel form-card reminder-form">
+    <form method="post" asp-action="Create" class="glass-panel form-card reminder-form reminder-studio" id="reminderCreateForm">
         @Html.AntiForgeryToken()
         <div asp-validation-summary="ModelOnly" class="field-error summary-error"></div>
 
         <div class="panel-heading">
             <div>
-                <p class="eyebrow">Reminder</p>
-                <h2>@(string.IsNullOrWhiteSpace(form.Title) ? "Create reminder" : "Edit reminder")</h2>
+                <p class="eyebrow">AI Reminder Studio</p>
+                <h2>Craft better reminders in one pass</h2>
             </div>
         </div>
 
-        <label class="field">
-            <span class="field-label">Title</span>
-            <input asp-for="Form.Title" class="field-control" placeholder="Study DBMS at 7 PM" />
-            <span asp-validation-for="Form.Title" class="field-error"></span>
-        </label>
+        <p class="helper-copy">Use AI to draft reminder copy and timing from your momentum signals, then schedule across one or more channels.</p>
 
         <label class="field">
-            <span class="field-label">Message</span>
-            <textarea asp-for="Form.Message" rows="3" class="field-control" placeholder="Short reminder note"></textarea>
-            <span asp-validation-for="Form.Message" class="field-error"></span>
+            <span class="field-label">AI focus prompt (optional)</span>
+            <textarea asp-for="Form.AiPrompt" rows="2" class="field-control" id="aiReminderPromptInput" placeholder="Example: keep me accountable for physics numericals tonight"></textarea>
+            <span asp-validation-for="Form.AiPrompt" class="field-error"></span>
         </label>
 
-        <label class="field">
-            <span class="field-label">Reminder time</span>
-            <input asp-for="Form.ReminderDateTime" type="datetime-local" class="field-control" />
-            <span asp-validation-for="Form.ReminderDateTime" class="field-error"></span>
-        </label>
+        <div class="reminder-template-row">
+            <button type="button" class="btn btn-ghost small reminder-template-chip" data-template="Quick revision sprint for pending topics">Revision sprint</button>
+            <button type="button" class="btn btn-ghost small reminder-template-chip" data-template="Deep work focus for the hardest subtopic today">Deep work</button>
+            <button type="button" class="btn btn-ghost small reminder-template-chip" data-template="Evening recap and active recall checkpoint">Evening recap</button>
+        </div>
 
-        <label class="field">
-            <span class="field-label">Channel</span>
-            <select asp-for="Form.Channel" class="field-control">
-                <option>InApp</option>
-                <option>Email</option>
-            </select>
-        </label>
+        <div class="form-grid">
+            <label class="field">
+                <span class="field-label">Title</span>
+                <input asp-for="Form.Title" class="field-control" placeholder="AI reminder title" id="reminderTitleInput" />
+                <span asp-validation-for="Form.Title" class="field-error"></span>
+            </label>
 
-        <button type="submit" class="btn btn-primary">Add reminder</button>
+            <label class="field">
+                <span class="field-label">Reminder time</span>
+                <input asp-for="Form.ReminderDateTime" type="datetime-local" class="field-control" id="reminderDateInput" />
+                <span asp-validation-for="Form.ReminderDateTime" class="field-error"></span>
+            </label>
+
+            <label class="field span-2">
+                <span class="field-label">Message</span>
+                <textarea asp-for="Form.Message" rows="3" class="field-control" id="reminderMessageInput" placeholder="AI reminder coaching message"></textarea>
+                <span asp-validation-for="Form.Message" class="field-error"></span>
+            </label>
+        </div>
+
+        <fieldset class="channel-fieldset">
+            <legend class="field-label">Delivery channels</legend>
+            <p class="helper-copy">Choose one or more channels. AI can pre-select channels based on your setup.</p>
+            <div class="channel-toggle-grid">
+                <label class="channel-toggle">
+                    <input asp-for="Form.ChannelInApp" id="reminderChannelInAppInput" />
+                    <span>In-app</span>
+                </label>
+                <label class="channel-toggle">
+                    <input asp-for="Form.ChannelEmail" id="reminderChannelEmailInput" />
+                    <span>Email</span>
+                </label>
+                <label class="channel-toggle">
+                    <input asp-for="Form.ChannelBrowserPush" id="reminderChannelBrowserPushInput" />
+                    <span>Browser push</span>
+                </label>
+            </div>
+            <span asp-validation-for="Form.ChannelInApp" class="field-error"></span>
+        </fieldset>
+
+        <p class="helper-copy" id="aiReminderDraftMeta">AI draft not generated yet.</p>
+
+        <div class="task-actions-inline">
+            <button type="button" class="btn btn-secondary" id="aiReminderDraftBtn">Generate with AI</button>
+            <button type="submit" class="btn btn-primary">Create reminders</button>
+        </div>
+
     </form>
 
     <article class="glass-panel panel-card">
         <div class="panel-heading">
             <div>
                 <p class="eyebrow">Reminders</p>
-                <h2>Your reminders</h2>
+                <h2>Delivery pipeline</h2>
+            </div>
+            <div class="task-actions-inline">
+                <form method="post" asp-action="SyncAiReminders">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-secondary small">Run AI sync now</button>
+                </form>
+                <form method="post" asp-action="ProcessNow">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-ghost small">Process due now</button>
+                </form>
             </div>
         </div>
 
@@ -58,7 +102,7 @@
         {
             <div class="empty-state compact">
                 <h3>No reminders scheduled</h3>
-                <p>Create an in-app or email reminder for your next focused session.</p>
+                <p>Create reminders or run AI sync to auto-schedule adaptive reminders.</p>
             </div>
         }
         else
@@ -70,11 +114,17 @@
                         <div>
                             <p class="reminder-title">@reminder.Title</p>
                             <p class="reminder-message">@reminder.Message</p>
-                            <p class="reminder-meta">@reminder.ReminderDateTime.ToString("dd MMM yyyy, hh:mm tt")</p>
+                            <p class="reminder-meta">@reminder.ReminderDateTime.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")</p>
+                            <p class="reminder-meta">Channel: @reminder.Channel | Status: @reminder.DeliveryStatus | Attempts: @reminder.DeliveryAttempts</p>
+                            @if (!string.IsNullOrWhiteSpace(reminder.LastDeliveryError))
+                            {
+                                <p class="field-error">Last error: @reminder.LastDeliveryError</p>
+                            }
                         </div>
 
                         <div class="reminder-actions">
                             <span class="pill @(reminder.IsRead ? "muted" : "brand")">@(reminder.IsRead ? "Read" : "Unread")</span>
+                            <span class="pill delivery-pill @reminder.DeliveryStatus.ToString().ToLowerInvariant()">@reminder.DeliveryStatus</span>
 
                             <div class="reminder-button-row">
                                 @if (!reminder.IsRead)

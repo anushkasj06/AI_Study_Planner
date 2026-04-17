@@ -5,5 +5,5 @@ namespace AIStudyPlanner.Api.Interfaces;
 
 public interface IGeminiService
 {
-    Task<GeneratedPlanResult> GenerateStudyPlanAsync(User user, StudyGoal goal, CancellationToken cancellationToken = default);
+    Task<GeneratedPlanResult> GenerateStudyPlanAsync(User user, StudyGoal goal, string planningContext, CancellationToken cancellationToken = default);
 }

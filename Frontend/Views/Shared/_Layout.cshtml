@@ -1,8 +1,10 @@
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{
     var hideShell = ViewData["HideShell"] as bool? ?? false;
     var requestPath = Context.Request.Path.Value ?? string.Empty;
     var pageTitle = ViewData["Title"]?.ToString() ?? "AI Study Planner";
     var pageSubtitle = ViewData["Subtitle"]?.ToString() ?? "Plan, track, and keep your study rhythm moving.";
+    var antiforgeryToken = Antiforgery.GetAndStoreTokens(Context).RequestToken ?? string.Empty;
     var initials = string.Join(string.Empty,
         (User.Identity?.Name ?? "User")
             .Split(' ', StringSplitOptions.RemoveEmptyEntries)
@@ -31,6 +33,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="request-verification-token" content="@antiforgeryToken" />
     <title>@pageTitle - AI Study Planner</title>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
@@ -94,6 +97,13 @@ else
                         <span>AI scheduling ready</span>
                     </div>
 
+                    <button type="button" class="btn btn-secondary small hidden-on-mobile" id="notificationToggleBtn">
+                        @Html.Raw(Icon("bell"))
+                        <span>Notifications</span>
+                    </button>
+
+                    <button type="button" class="btn btn-secondary small hidden-on-mobile" id="enablePushBtn">Enable web alerts</button>
+
                     <div class="badge-circle accent hidden-on-mobile">
                         <span>@initials</span>
                     </div>
@@ -110,6 +120,17 @@ else
                 </div>
             </header>
 
+            <section id="notificationPanel" class="glass-panel panel-card notification-panel hidden" aria-live="polite">
+                <div class="panel-heading">
+                    <div>
+                        <p class="eyebrow">Notification center</p>
+                        <h2>In-app alerts</h2>
+                    </div>
+                    <button type="button" class="btn btn-ghost small" id="markAllNotificationsReadBtn">Mark all read</button>
+                </div>
+                <div id="notificationList" class="reminder-list"></div>
+            </section>
+
             @if (TempData["SuccessMessage"] is string successMessage)
             {
                 <div class="alert success">@successMessage</div>
@@ -124,8 +145,63 @@ else
             </main>
         </div>
     </div>
+
+    <div class="assistant-fab-container">
+        <button type="button" class="assistant-fab" id="assistantFab" aria-label="Open AI study assistant">
+            <span>AI</span>
+        </button>
+
+        <section id="assistantPanel" class="assistant-panel glass-panel hidden" aria-live="polite">
+            <div class="assistant-header">
+                <div>
+                    <p class="eyebrow">AI Assistant</p>
+                    <h3>Study copilot</h3>
+                </div>
+                <div class="assistant-header-actions">
+                    <button type="button" class="icon-button" id="assistantExpandBtn" aria-pressed="false">Maximize</button>
+                    <button type="button" class="icon-button" id="assistantCloseBtn">Close</button>
+                </div>
+            </div>
+
+            <div class="assistant-shortcuts">
+                <button type="button" class="assistant-chip" data-assistant-prompt="Summarize my top goal and give me the next best study move.">Today</button>
+                <button type="button" class="assistant-chip" data-assistant-prompt="Create a clean mind map for my top active goal with a balanced graph layout.">Mind map</button>
+                <button type="button" class="assistant-chip" data-assistant-prompt="Write a concise revision note I can use for active recall.">Revision note</button>
+            </div>
+
+            <div id="assistantMessages" class="assistant-messages">
+                <article class="assistant-message bot">
+                    Ask me about your progress, next steps, notes, or mind maps.
+                </article>
+            </div>
+
+            <section id="assistantMindMapPanel" class="assistant-mindmap-panel hidden">
+                <div class="assistant-mindmap-head">
+                    <div>
+                        <p class="eyebrow">Visual map</p>
+                        <h4>Latest mind map</h4>
+                    </div>
+                    <span id="assistantMindMapProvider" class="pill muted">Groq</span>
+                </div>
+                <div id="assistantMindMap" class="assistant-mindmap"></div>
+            </section>
+
+            <form id="assistantForm" class="assistant-form">
+                <input id="assistantInput" class="field-control" placeholder="Ask for a plan, note, or mind map" maxlength="1500" />
+                <button type="submit" class="btn btn-primary small">Send</button>
+            </form>
+
+            <div class="assistant-note-row">
+                <input id="assistantNotePrompt" class="field-control" placeholder="Create a note or mind map prompt" maxlength="2000" />
+                <button type="button" class="btn btn-secondary small" id="assistantCreateNoteBtn">Create note</button>
+            </div>
+
+            <div id="assistantNotes" class="assistant-notes"></div>
+        </section>
+    </div>
 }
 
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js" crossorigin="anonymous"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
 @RenderSection("Scripts", required: false)
 </body>

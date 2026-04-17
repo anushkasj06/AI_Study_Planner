@@ -3,29 +3,83 @@ using System.Text.Json.Serialization;
 using AIStudyPlanner.Api.BackgroundServices;
 using AIStudyPlanner.Api.Data;
 using AIStudyPlanner.Api.DTOs.Auth;
+using AIStudyPlanner.Api.DTOs.Assistant;
 using AIStudyPlanner.Api.DTOs.Goals;
+using AIStudyPlanner.Api.DTOs.Notifications;
 using AIStudyPlanner.Api.DTOs.Progress;
 using AIStudyPlanner.Api.DTOs.Reminders;
 using AIStudyPlanner.Api.DTOs.Tasks;
+using AIStudyPlanner.Api.Filters;
 using AIStudyPlanner.Api.Helpers;
 using AIStudyPlanner.Api.Interfaces;
 using AIStudyPlanner.Api.Middleware;
 using AIStudyPlanner.Api.Services;
+using DotNetEnv;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Threading.RateLimiting;
+using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var envCandidates = new[]
+{
+    Path.Combine(builder.Environment.ContentRootPath, ".env"),
+    Path.Combine(builder.Environment.ContentRootPath, "Backend", ".env"),
+    Path.Combine(Directory.GetCurrentDirectory(), ".env"),
+    Path.Combine(Directory.GetCurrentDirectory(), "Backend", ".env")
+};
+
+foreach (var envFilePath in envCandidates.Distinct())
+{
+    if (File.Exists(envFilePath))
+    {
+        Env.NoClobber().Load(envFilePath);
+        break;
+    }
+}
 
 builder.Configuration.AddEnvironmentVariables();
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.Configure<GeminiOptions>(builder.Configuration.GetSection(GeminiOptions.SectionName));
+builder.Services.Configure<GroqOptions>(builder.Configuration.GetSection(GroqOptions.SectionName));
+builder.Services.PostConfigure<GroqOptions>(options =>
+{
+    var legacyOptions = builder.Configuration.GetSection("Grok").Get<GroqOptions>();
+    if (legacyOptions is null)
+    {
+        return;
+    }
+
+    if (string.IsNullOrWhiteSpace(options.ApiKey))
+    {
+        options.ApiKey = legacyOptions.ApiKey;
+    }
+
+    if (string.IsNullOrWhiteSpace(options.Model))
+    {
+        options.Model = legacyOptions.Model;
+    }
+
+    if (string.IsNullOrWhiteSpace(options.Endpoint))
+    {
+        options.Endpoint = legacyOptions.Endpoint;
+    }
+
+    if (options.RequestTimeoutSeconds <= 0)
+    {
+        options.RequestTimeoutSeconds = legacyOptions.RequestTimeoutSeconds;
+    }
+});
 builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection(SmtpOptions.SectionName));
+builder.Services.Configure<WebPushOptions>(builder.Configuration.GetSection(WebPushOptions.SectionName));
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' was not found.");
@@ -43,19 +97,32 @@ builder.Services.AddScoped<IProgressService, ProgressService>();
 builder.Services.AddScoped<IReminderService, ReminderService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IWebPushService, WebPushService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IAssistantComposerService, AssistantComposerService>();
+builder.Services.AddScoped<IStudyAssistantService, StudyAssistantService>();
+builder.Services.AddScoped<IStudyNoteService, StudyNoteService>();
 builder.Services.AddScoped<IDataSeeder, DataSeeder>();
 
 builder.Services.AddHttpClient<IGeminiService, GeminiService>();
 builder.Services.AddHostedService<ReminderProcessingService>();
+builder.Services.AddScoped<ActionLoggingFilter>();
 
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<StudyGoalCreateRequestValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<ProgressLogCreateRequestValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<ReminderCreateRequestValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<ReminderBatchCreateRequestValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<AiReminderDraftRequestValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<StudyTaskUpdateRequestValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<AssistantChatRequestValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<WebPushSubscriptionRequestValidator>();
 
-builder.Services.AddControllers().AddJsonOptions(options =>
+builder.Services.AddControllers(options =>
+{
+    options.Filters.AddService<ActionLoggingFilter>();
+}).AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
@@ -112,6 +179,20 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddPolicy("AuthLoginPolicy", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            }));
+});
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
@@ -127,7 +208,30 @@ builder.Services.AddProblemDetails();
 
 var app = builder.Build();
 
+var configuredFrontendBaseUrl = app.Configuration["Frontend:BaseUrl"] ?? "http://localhost:5173";
+var configuredWebPush = app.Services.GetRequiredService<IOptions<WebPushOptions>>().Value;
+
+app.Logger.LogInformation(
+    "Backend starting in {Environment}. Frontend origin: {FrontendBaseUrl}. WebPush configured: {WebPushConfigured}",
+    app.Environment.EnvironmentName,
+    configuredFrontendBaseUrl,
+    configuredWebPush.IsConfigured);
+
 app.UseMiddleware<GlobalExceptionMiddleware>();
+
+app.Use(async (context, next) =>
+{
+    var stopwatch = Stopwatch.StartNew();
+    await next();
+    stopwatch.Stop();
+
+    app.Logger.LogInformation(
+        "Backend request {Method} {Path} returned {StatusCode} in {ElapsedMs}ms",
+        context.Request.Method,
+        context.Request.Path,
+        context.Response.StatusCode,
+        stopwatch.ElapsedMilliseconds);
+});
 
 if (app.Environment.IsDevelopment())
 {
@@ -137,6 +241,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("Frontend");
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 

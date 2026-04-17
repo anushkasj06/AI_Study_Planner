@@ -37,3 +37,13 @@ public class GeneratedTaskItem
     public string Notes { get; set; } = string.Empty;
     public string Priority { get; set; } = string.Empty;
 }
+
+public class AiProviderStatusResponse
+{
+    public string Provider { get; set; } = "Unknown";
+    public string RequestStatus { get; set; } = "None";
+    public bool UsedFallback { get; set; }
+    public Guid? StudyGoalId { get; set; }
+    public DateTime? LastAttemptAtUtc { get; set; }
+    public string Message { get; set; } = string.Empty;
+}

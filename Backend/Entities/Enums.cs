@@ -49,7 +49,22 @@ public enum TaskType
 public enum ReminderChannel
 {
     InApp,
-    Email
+    Email,
+    BrowserPush
+}
+
+public enum ReminderDeliveryStatus
+{
+    Pending,
+    Sent,
+    Failed
+}
+
+public enum NotificationType
+{
+    Reminder,
+    StudyInsight,
+    System
 }
 
 public enum AiRequestStatus
