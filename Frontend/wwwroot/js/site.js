@@ -9,6 +9,7 @@
   initializeAlerts();
   initializeNotifications();
   initializeAssistant();
+  initializeNotesPage();
   initializeWebPush();
   initializeReminderStudio();
 
@@ -118,16 +119,13 @@
     const closeButton = document.getElementById('assistantCloseBtn');
     const form = document.getElementById('assistantForm');
     const input = document.getElementById('assistantInput');
-    const noteInput = document.getElementById('assistantNotePrompt');
-    const createNoteButton = document.getElementById('assistantCreateNoteBtn');
     const messages = document.getElementById('assistantMessages');
-    const notes = document.getElementById('assistantNotes');
     const shortcuts = document.querySelectorAll('.assistant-chip[data-assistant-prompt]');
     const mindMapPanel = document.getElementById('assistantMindMapPanel');
     const mindMapContainer = document.getElementById('assistantMindMap');
     const mindMapProvider = document.getElementById('assistantMindMapProvider');
 
-    if (!fab || !panel || !expandButton || !closeButton || !form || !input || !messages || !notes || !noteInput || !createNoteButton) {
+    if (!fab || !panel || !expandButton || !closeButton || !form || !input || !messages) {
       return;
     }
 
@@ -142,10 +140,6 @@
       try {
         logClientDebug('assistant panel toggle requested');
         panel.classList.toggle('hidden');
-        if (!panel.classList.contains('hidden')) {
-          logClientDebug('assistant panel opened, loading notes');
-          await loadAssistantNotes(notes);
-        }
       } catch (error) {
         logClientError('opening assistant panel', error);
       }
@@ -194,74 +188,6 @@
         logClientError('sending assistant chat message', error);
       }
     });
-
-    createNoteButton.addEventListener('click', async () => {
-      const notePrompt = noteInput.value.trim();
-      if (!notePrompt) {
-        return;
-      }
-
-      try {
-        logClientDebug('assistant note create requested');
-        await apiRequest('/app/assistant/notes', {
-          method: 'POST',
-          body: {
-            prompt: notePrompt
-          }
-        });
-
-        noteInput.value = '';
-        await loadAssistantNotes(notes);
-      } catch (error) {
-        logClientError('creating assistant note', error);
-      }
-    });
-  }
-
-  async function loadAssistantNotes(container) {
-    const notes = await apiRequest('/app/assistant/notes', { method: 'GET' });
-    container.innerHTML = '';
-
-    if (!notes.length) {
-      container.innerHTML = '<p class="helper-copy">No notes yet. Ask the assistant to create one.</p>';
-      return;
-    }
-
-    notes.forEach((note) => {
-      const card = document.createElement('article');
-      card.className = 'assistant-note-card';
-      card.innerHTML = `
-        <div class="task-row-top">
-          <h4>${escapeHtml(note.title)}</h4>
-          <button type="button" class="icon-button danger">Delete</button>
-        </div>
-        <p class="helper-copy">Updated ${formatDate(note.updatedAt)}</p>
-        ${note.mindMapMermaid ? '<div class="assistant-note-graph"></div>' : ''}
-        <pre>${escapeHtml(note.contentMarkdown).slice(0, 280)}...</pre>
-      `;
-
-      const deleteButton = card.querySelector('button');
-      deleteButton.addEventListener('click', async () => {
-        try {
-          await apiRequest(`/app/assistant/notes/${note.id}/delete`, {
-            method: 'POST'
-          });
-          await loadAssistantNotes(container);
-        } catch (error) {
-          logClientError('deleting assistant note', error);
-        }
-      });
-
-      const graphContainer = card.querySelector('.assistant-note-graph');
-      if (graphContainer && note.mindMapMermaid) {
-        renderMermaidDiagram(graphContainer, note.mindMapMermaid).catch((error) => {
-          logClientError('rendering assistant note graph', error);
-          graphContainer.textContent = note.mindMapMermaid;
-        });
-      }
-
-      container.appendChild(card);
-    });
   }
 
   function appendMessage(container, message, sender) {
@@ -281,16 +207,39 @@
         appendMessage(container, `Suggested next actions: ${suggestionLine}`, 'bot');
       }
     }
+  }
 
-    if (response.noteTitle || response.noteMarkdown) {
-      const notePreview = document.createElement('article');
-      notePreview.className = 'assistant-message bot assistant-note-preview';
-      notePreview.innerHTML = `
-        <p class="assistant-message-title">${escapeHtml(response.noteTitle || 'Note draft')}</p>
-        <p>${escapeHtml((response.noteMarkdown || '').slice(0, 240))}</p>`;
-      container.appendChild(notePreview);
-      container.scrollTop = container.scrollHeight;
+  function initializeNotesPage() {
+    const noteCards = document.querySelectorAll('.note-diagram[data-mermaid]');
+    if (!noteCards.length) {
+      return;
     }
+
+    noteCards.forEach((diagramNode) => {
+      const diagram = diagramNode.getAttribute('data-mermaid') ?? diagramNode.textContent ?? '';
+      if (!diagram.trim()) {
+        return;
+      }
+
+      renderMermaidDiagram(diagramNode, diagram).catch((error) => {
+        logClientError('rendering note graph', error);
+        diagramNode.textContent = diagram;
+      });
+    });
+
+    const chips = document.querySelectorAll('.notes-template-chip[data-note-template]');
+    const promptInput = document.querySelector('.notes-compose-card textarea[name="Prompt"]');
+
+    if (!promptInput) {
+      return;
+    }
+
+    chips.forEach((button) => {
+      button.addEventListener('click', () => {
+        promptInput.value = button.getAttribute('data-note-template') ?? '';
+        promptInput.focus();
+      });
+    });
   }
 
   async function renderAssistantMindMap(panel, container, providerChip, diagram, provider, usedFallback) {

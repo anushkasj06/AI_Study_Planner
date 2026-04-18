@@ -20,6 +20,7 @@
         "plus" => "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M12 5v14M5 12h14' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'/></svg>",
         "calendar" => "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M7 4.5v2M17 4.5v2M5 9h14M6.5 6.5h11A1.5 1.5 0 0 1 19 8v10A1.5 1.5 0 0 1 17.5 19.5h-11A1.5 1.5 0 0 1 5 18V8a1.5 1.5 0 0 1 1.5-1.5Z' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linejoin='round'/></svg>",
         "chart" => "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M5.5 19.5h13A1.5 1.5 0 0 0 20 18V5' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'/><path d='M8 16v-4M12 16V8M16 16v-6' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'/></svg>",
+        "notes" => "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M7 4.5h7.5L19 9v10.5A1.5 1.5 0 0 1 17.5 21h-10A1.5 1.5 0 0 1 6 19.5V6A1.5 1.5 0 0 1 7.5 4.5Z' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linejoin='round'/><path d='M8.5 10h7M8.5 13h7M8.5 16h4' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'/></svg>",
         "timer" => "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M9 2.75h6M12 6v-2.5M12 21a7.5 7.5 0 1 0 0-15 7.5 7.5 0 0 0 0 15Z' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/><path d='m12 12 2.5-1.5' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'/></svg>",
         "user" => "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M12 12.25a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z' fill='none' stroke='currentColor' stroke-width='1.8'/><path d='M5.5 20a6.5 6.5 0 0 1 13 0' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'/></svg>",
         "spark" => "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M12 3.75 13.8 9l5.2 1.8-5.2 1.8L12 17.8l-1.8-5.2L5 10.8 10.2 9 12 3.75Z' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linejoin='round'/></svg>",
@@ -52,9 +53,9 @@ else
             <div class="brand-block">
                 <div class="brand-mark">AI</div>
                 <div>
-                    <p class="eyebrow">Workspace</p>
-                    <h2>Focus mode</h2>
-                    <p>Plan smart, revise consistently, and stay ahead of deadlines.</p>
+                    <p class="eyebrow">Study workspace</p>
+                    <h2>Plan with clarity</h2>
+                    <p>Keep goals, notes, reminders, and progress in one calm workspace.</p>
                 </div>
             </div>
 
@@ -71,6 +72,7 @@ else
                 <a class="@NavClass("/app/goals")" href="/app/goals">@Html.Raw(Icon("goals"))<span>Goals</span></a>
                 <a class="@NavClass("/app/goals/new")" href="/app/goals/new">@Html.Raw(Icon("plus"))<span>Create Goal</span></a>
                 <a class="@NavClass("/app/planner")" href="/app/planner">@Html.Raw(Icon("calendar"))<span>Planner</span></a>
+                <a class="@NavClass("/app/notes")" href="/app/notes">@Html.Raw(Icon("notes"))<span>Notes</span></a>
                 <a class="@NavClass("/app/progress")" href="/app/progress">@Html.Raw(Icon("chart"))<span>Progress</span></a>
                 <a class="@NavClass("/app/reminders")" href="/app/reminders">@Html.Raw(Icon("timer"))<span>Reminders</span></a>
                 <a class="@NavClass("/app/profile")" href="/app/profile">@Html.Raw(Icon("user"))<span>Profile</span></a>
@@ -94,7 +96,7 @@ else
                 <div class="navbar-actions">
                     <div class="status-chip hidden-on-mobile">
                         @Html.Raw(Icon("spark"))
-                        <span>AI scheduling ready</span>
+                        <span>AI planning ready</span>
                     </div>
 
                     <button type="button" class="btn btn-secondary small hidden-on-mobile" id="notificationToggleBtn">
@@ -102,7 +104,7 @@ else
                         <span>Notifications</span>
                     </button>
 
-                    <button type="button" class="btn btn-secondary small hidden-on-mobile" id="enablePushBtn">Enable web alerts</button>
+                    <button type="button" class="btn btn-secondary small hidden-on-mobile" id="enablePushBtn">Web alerts</button>
 
                     <div class="badge-circle accent hidden-on-mobile">
                         <span>@initials</span>
@@ -142,6 +144,22 @@ else
 
             <main class="content-stack">
                 @RenderBody()
+
+                <footer class="app-footer glass-panel">
+                    <div>
+                        <p class="eyebrow">Workspace footer</p>
+                        <h3>AI Study Planner</h3>
+                        <p class="helper-copy">A structured workspace for goals, notes, reminders, and progress tracking.</p>
+                    </div>
+
+                    <div class="footer-links">
+                        <a href="/app/dashboard">Dashboard</a>
+                        <a href="/app/goals">Goals</a>
+                        <a href="/app/planner">Planner</a>
+                        <a href="/app/notes">Notes</a>
+                        <a href="/app/reminders">Reminders</a>
+                    </div>
+                </footer>
             </main>
         </div>
     </div>
@@ -155,7 +173,7 @@ else
             <div class="assistant-header">
                 <div>
                     <p class="eyebrow">AI Assistant</p>
-                    <h3>Study copilot</h3>
+                    <h3>Study chat</h3>
                 </div>
                 <div class="assistant-header-actions">
                     <button type="button" class="icon-button" id="assistantExpandBtn" aria-pressed="false">Maximize</button>
@@ -166,12 +184,14 @@ else
             <div class="assistant-shortcuts">
                 <button type="button" class="assistant-chip" data-assistant-prompt="Summarize my top goal and give me the next best study move.">Today</button>
                 <button type="button" class="assistant-chip" data-assistant-prompt="Create a clean mind map for my top active goal with a balanced graph layout.">Mind map</button>
-                <button type="button" class="assistant-chip" data-assistant-prompt="Write a concise revision note I can use for active recall.">Revision note</button>
+                <a class="assistant-chip assistant-chip-link" href="/app/notes">Notes page</a>
             </div>
+
+            <p class="assistant-helper-copy">Use chat for planning questions and the notes page for generated study notes.</p>
 
             <div id="assistantMessages" class="assistant-messages">
                 <article class="assistant-message bot">
-                    Ask me about your progress, next steps, notes, or mind maps.
+                    Ask me about your progress, next steps, or a mind map.
                 </article>
             </div>
 
@@ -187,16 +207,9 @@ else
             </section>
 
             <form id="assistantForm" class="assistant-form">
-                <input id="assistantInput" class="field-control" placeholder="Ask for a plan, note, or mind map" maxlength="1500" />
+                <input id="assistantInput" class="field-control" placeholder="Ask for a plan, progress check, or mind map" maxlength="1500" />
                 <button type="submit" class="btn btn-primary small">Send</button>
             </form>
-
-            <div class="assistant-note-row">
-                <input id="assistantNotePrompt" class="field-control" placeholder="Create a note or mind map prompt" maxlength="2000" />
-                <button type="button" class="btn btn-secondary small" id="assistantCreateNoteBtn">Create note</button>
-            </div>
-
-            <div id="assistantNotes" class="assistant-notes"></div>
         </section>
     </div>
 }

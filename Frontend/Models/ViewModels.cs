@@ -140,3 +140,12 @@ public sealed class AssistantWidgetViewModel
     [StringLength(2000, MinimumLength = 3)]
     public string NotePrompt { get; set; } = string.Empty;
 }
+
+public sealed class NotesPageViewModel
+{
+    [Required]
+    [StringLength(2000, MinimumLength = 3)]
+    public string Prompt { get; set; } = string.Empty;
+
+    public IReadOnlyList<StudyNoteResponse> Notes { get; set; } = [];
+}

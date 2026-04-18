@@ -1,0 +1,150 @@
+@model NotesPageViewModel
+@{
+    ViewData["Title"] = "Notes";
+    ViewData["Subtitle"] = "Create polished study notes here while the assistant stays focused on chat and mind maps.";
+    var notes = Model.Notes;
+    var notesWithMaps = notes.Count(note => !string.IsNullOrWhiteSpace(note.MindMapMermaid));
+}
+
+<section class="notes-hero glass-panel">
+    <div class="notes-hero-copy">
+        <p class="eyebrow">Notes workspace</p>
+        <h2>Make revision notes in one dedicated place</h2>
+        <p class="helper-copy">The assistant panel is now chat-only. Use this page when you want a clean, reusable note draft with an optional visual map.</p>
+    </div>
+
+    <div class="notes-hero-actions">
+        <a class="btn btn-secondary" href="/app/dashboard">Back to dashboard</a>
+        <a class="btn btn-primary" href="/app/planner">Open planner</a>
+    </div>
+</section>
+
+<section class="notes-summary-grid">
+    <article class="glass-panel metric-card notes-metric-card">
+        <span class="meta-label">Total notes</span>
+        <strong>@notes.Count</strong>
+        <p class="helper-copy">Keep only the best version of each topic.</p>
+    </article>
+    <article class="glass-panel metric-card notes-metric-card">
+        <span class="meta-label">Notes with maps</span>
+        <strong>@notesWithMaps</strong>
+        <p class="helper-copy">Mind maps help with recall and structure.</p>
+    </article>
+    <article class="glass-panel metric-card notes-metric-card">
+        <span class="meta-label">Best use</span>
+        <strong>Revision</strong>
+        <p class="helper-copy">Turn long chapters into compact active recall notes.</p>
+    </article>
+</section>
+
+<section class="notes-layout">
+    <form method="post" asp-action="Create" class="glass-panel form-card notes-compose-card">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="field-error summary-error"></div>
+
+        <div class="panel-heading">
+            <div>
+                <p class="eyebrow">New note</p>
+                <h2>Create a study note</h2>
+            </div>
+        </div>
+
+        <p class="helper-copy">Write a topic, chapter, or exam theme. The AI will turn it into a compact note you can reuse later.</p>
+
+        <div class="notes-template-row">
+            <button type="button" class="btn btn-ghost small notes-template-chip" data-note-template="Create a concise revision note on photosynthesis with key definitions, memory hooks, and common mistakes.">Photosynthesis</button>
+            <button type="button" class="btn btn-ghost small notes-template-chip" data-note-template="Turn the topic of recursion into an active recall note with examples, pitfalls, and a mind map.">Recursion</button>
+            <button type="button" class="btn btn-ghost small notes-template-chip" data-note-template="Summarize operating systems scheduling in a clean note with bullet points and short exam prompts.">OS scheduling</button>
+        </div>
+
+        <label class="field">
+            <span class="field-label">Prompt</span>
+            <textarea asp-for="Prompt" rows="7" class="field-control" placeholder="Example: create a revision note on projectile motion for a semester exam"></textarea>
+            <span asp-validation-for="Prompt" class="field-error"></span>
+        </label>
+
+        <div class="notes-form-footer">
+            <p class="helper-copy">Tip: keep the prompt specific. You can ask for definitions, steps, formulas, or exam-style questions.</p>
+            <button type="submit" class="btn btn-primary">Create note</button>
+        </div>
+    </form>
+
+    <article class="glass-panel panel-card notes-guide-card">
+        <div class="panel-heading">
+            <div>
+                <p class="eyebrow">How to use it</p>
+                <h2>Fast, predictable note workflow</h2>
+            </div>
+        </div>
+
+        <div class="notes-steps">
+            <div class="notes-step">
+                <span class="notes-step-number">1</span>
+                <div>
+                    <h3>Describe the topic</h3>
+                    <p class="helper-copy">Use a chapter name, a weak topic, or an exam unit.</p>
+                </div>
+            </div>
+            <div class="notes-step">
+                <span class="notes-step-number">2</span>
+                <div>
+                    <h3>Review the draft</h3>
+                    <p class="helper-copy">Check the note title, content, and mind map before you revise.</p>
+                </div>
+            </div>
+            <div class="notes-step">
+                <span class="notes-step-number">3</span>
+                <div>
+                    <h3>Keep only what helps</h3>
+                    <p class="helper-copy">Delete drafts you do not need so the workspace stays focused.</p>
+                </div>
+            </div>
+        </div>
+    </article>
+</section>
+
+<section class="notes-list-section">
+    <div class="panel-heading notes-list-heading">
+        <div>
+            <p class="eyebrow">Saved notes</p>
+            <h2>Your note library</h2>
+        </div>
+    </div>
+
+    @if (notes.Count == 0)
+    {
+        <div class="empty-state compact">
+            <h3>No notes yet</h3>
+            <p>Create your first note to see it appear here with an optional mind map.</p>
+        </div>
+    }
+    else
+    {
+        <div class="notes-grid">
+            @foreach (var note in notes)
+            {
+                <article class="glass-panel note-card">
+                    <div class="note-card-head">
+                        <div>
+                            <p class="eyebrow">@note.UpdatedAt.ToString("dd MMM yyyy")</p>
+                            <h3>@note.Title</h3>
+                        </div>
+                        <form method="post" asp-action="Delete" asp-route-noteId="@note.Id">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="icon-button danger" onclick="return confirm('Delete this note?');">Delete</button>
+                        </form>
+                    </div>
+
+                    <p class="helper-copy note-card-meta">Created @note.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt") • Updated @note.UpdatedAt.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")</p>
+
+                    @if (!string.IsNullOrWhiteSpace(note.MindMapMermaid))
+                    {
+                        <div class="note-diagram mermaid" data-mermaid="@note.MindMapMermaid">@note.MindMapMermaid</div>
+                    }
+
+                    <pre class="note-content">@note.ContentMarkdown</pre>
+                </article>
+            }
+        </div>
+    }
+</section>
